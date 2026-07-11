@@ -35,6 +35,10 @@
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
+  @media (min-width: 861px){
+    html, body{ height: 100%; overflow: hidden; }
+    body{ display: flex; flex-direction: column; }
+  }
   ::selection{ background: var(--gold); color: var(--ink); }
 
   a { color: inherit; }
@@ -45,6 +49,9 @@
     border-bottom: 1px solid var(--ink-3);
     background:
       radial-gradient(ellipse 800px 200px at 15% -20%, rgba(199,154,63,0.12), transparent);
+  }
+  @media (min-width: 861px){
+    header.top{ flex: 0 0 auto; }
   }
   .top-inner{
     max-width: 1280px;
@@ -117,21 +124,33 @@
     grid-template-columns: 268px 1fr;
     gap: 32px;
     padding: 32px;
+    width: 100%;
   }
   @media (max-width: 860px){
     .layout{ grid-template-columns: 1fr; padding: 20px; gap: 20px; }
   }
+  @media (min-width: 861px){
+    .layout{ flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    main{ height: 100%; overflow-y: auto; padding-right: 6px; }
+    main::-webkit-scrollbar{ width: 6px; }
+    main::-webkit-scrollbar-thumb{ background: var(--ink-3); border-radius: 3px; }
+  }
 
   /* ---------- Facet rail ---------- */
   .facets{
-    align-self: start;
-    position: sticky;
-    top: 20px;
     display: flex;
     flex-direction: column;
     gap: 22px;
   }
-  @media (max-width: 860px){ .facets{ position: static; } }
+  @media (min-width: 861px){
+    .facets{
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    .facets::-webkit-scrollbar{ width: 6px; }
+    .facets::-webkit-scrollbar-thumb{ background: var(--ink-3); border-radius: 3px; }
+  }
 
   .facet-block{
     border-top: 1px solid var(--ink-3);
@@ -209,6 +228,125 @@
     cursor: pointer;
   }
   .toggle-row input{ accent-color: var(--gold); width: 14px; height: 14px; }
+
+  /* ---------- Dual-handle range slider ---------- */
+  .dual-slider{ padding-top: 4px; }
+  .dual-slider-track{
+    position: relative;
+    height: 26px;
+  }
+  .dual-slider-track::before{
+    content: "";
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 3px;
+    transform: translateY(-50%);
+    background: var(--ink-3);
+    border-radius: 2px;
+  }
+  .dual-slider-fill{
+    position: absolute;
+    top: 50%;
+    height: 3px;
+    transform: translateY(-50%);
+    background: var(--gold-dim);
+    border-radius: 2px;
+  }
+  .dual-range{
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 26px;
+    margin: 0;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    pointer-events: none;
+  }
+  .dual-range:nth-of-type(2){ z-index: 2; }
+  .dual-range::-webkit-slider-runnable-track{
+    -webkit-appearance: none;
+    background: transparent;
+    height: 26px;
+  }
+  .dual-range::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    pointer-events: auto;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    margin-top: 4px;
+    cursor: pointer;
+  }
+  .dual-range::-moz-range-track{
+    background: transparent;
+    height: 3px;
+  }
+  .dual-range::-moz-range-thumb{
+    pointer-events: auto;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    cursor: pointer;
+  }
+  .dual-slider-labels{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 2px;
+  }
+  .dual-slider-labels span{
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    line-height: 1.3;
+    max-width: 47%;
+  }
+  .dual-slider-labels span:last-child{ text-align: right; }
+
+  .exclude-unrated-btn{
+    width: 100%;
+    background: none;
+    border: 1px solid var(--ink-3);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    position: relative;
+    padding-left: 30px;
+  }
+  .exclude-unrated-btn::before{
+    content: "";
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1.5px solid var(--text-muted);
+    background: transparent;
+    transition: all 0.15s ease;
+  }
+  .exclude-unrated-btn:hover{ border-color: var(--gold-dim); color: var(--text-light); }
+  .exclude-unrated-btn[aria-pressed="true"]{
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    background: rgba(199,154,63,0.08);
+  }
+  .exclude-unrated-btn[aria-pressed="true"]::before{
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: inset 0 0 0 2px var(--ink);
+  }
 
   .clear-btn{
     background: none;
@@ -452,14 +590,57 @@
     <div class="facet-block" id="moodBlock">
       <p class="facet-title"><span>Mood</span><span class="chev">▾</span></p>
       <div class="facet-body">
-        <div class="check-list" id="moodList"></div>
+        <div class="dual-slider">
+          <div class="dual-slider-track">
+            <div class="dual-slider-fill" id="moodFill"></div>
+            <input type="range" min="0" max="10" step="1" value="0" class="dual-range" id="moodMin">
+            <input type="range" min="0" max="10" step="1" value="10" class="dual-range" id="moodMax">
+          </div>
+          <div class="dual-slider-labels">
+            <span>Dark, Dramatic, Pensive</span>
+            <span>Bright, Lively, Upbeat</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="facet-block" id="congBlock">
       <p class="facet-title"><span>Congregational</span><span class="chev">▾</span></p>
       <div class="facet-body">
-        <div class="check-list" id="congList"></div>
+        <div class="dual-slider">
+          <div class="dual-slider-track">
+            <div class="dual-slider-fill" id="congFill"></div>
+            <input type="range" min="0" max="10" step="1" value="0" class="dual-range" id="congMin">
+            <input type="range" min="0" max="10" step="1" value="10" class="dual-range" id="congMax">
+          </div>
+          <div class="dual-slider-labels">
+            <span>Difficult, Irregular</span>
+            <span>Easy, Recurrent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="facet-block" id="textVarBlock">
+      <p class="facet-title"><span>Textual Variance</span><span class="chev">▾</span></p>
+      <div class="facet-body">
+        <div class="dual-slider">
+          <div class="dual-slider-track">
+            <div class="dual-slider-fill" id="textVarFill"></div>
+            <input type="range" min="0" max="10" step="1" value="0" class="dual-range" id="textVarMin">
+            <input type="range" min="0" max="10" step="1" value="10" class="dual-range" id="textVarMax">
+          </div>
+          <div class="dual-slider-labels">
+            <span>Accommodated</span>
+            <span>Precise</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="facet-block">
+      <div class="facet-body">
+        <button class="exclude-unrated-btn" id="excludeUnratedBtn" aria-pressed="false">Exclude unrated songs</button>
       </div>
     </div>
 
@@ -504,8 +685,10 @@ const state = {
   search: "",
   psalm: "",
   genres: new Set(),
-  moods: new Set(),
-  congs: new Set(),
+  moodMin: 0, moodMax: 10,
+  congMin: 0, congMax: 10,
+  textVarMin: 0, textVarMax: 10,
+  excludeUnrated: false,
   chartOnly: false
 };
 
@@ -521,9 +704,8 @@ const els = {
   searchInput: document.getElementById('searchInput'),
   psalmInput: document.getElementById('psalmInput'),
   genreList: document.getElementById('genreList'),
-  moodList: document.getElementById('moodList'),
-  congList: document.getElementById('congList'),
   chartToggle: document.getElementById('chartToggle'),
+  excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
   clearBtn: document.getElementById('clearBtn'),
 };
 
@@ -644,36 +826,14 @@ function showLoadError(detail){
 
 function buildFacetOptions(){
   const genres = new Map();
-  const moods = new Map();
-  const congs = new Map();
 
   allRows.forEach(r=>{
     const g = splitMulti(r["Genre"]);
     if(g.length===0){ genres.set("Untagged", (genres.get("Untagged")||0)+1); }
     else g.forEach(v => genres.set(v, (genres.get(v)||0)+1));
-
-    const m = (r["Mood"]||"").trim();
-    const mKey = m || "Untagged";
-    moods.set(mKey, (moods.get(mKey)||0)+1);
-
-    const c = (r["Congregational"]||"").trim();
-    const cKey = c || "Untagged";
-    congs.set(cKey, (congs.get(cKey)||0)+1);
   });
 
   renderCheckList(els.genreList, genres, state.genres, 'genre');
-  renderCheckList(els.moodList, sortNumericMap(moods), state.moods, 'mood');
-  renderCheckList(els.congList, sortNumericMap(congs), state.congs, 'cong');
-}
-
-function sortNumericMap(map){
-  const entries = [...map.entries()];
-  entries.sort((a,b)=>{
-    if(a[0]==="Untagged") return 1;
-    if(b[0]==="Untagged") return -1;
-    return parseFloat(a[0]) - parseFloat(b[0]);
-  });
-  return new Map(entries);
 }
 
 function renderCheckList(container, map, stateSet, groupName){
@@ -716,20 +876,27 @@ function applyFilters(){
       const rowGenres = g.length ? g : ["Untagged"];
       if(!rowGenres.some(v=>state.genres.has(v))) return false;
     }
-    if(state.moods.size>0){
-      const m = (r["Mood"]||"").trim() || "Untagged";
-      if(!state.moods.has(m)) return false;
-    }
-    if(state.congs.size>0){
-      const c = (r["Congregational"]||"").trim() || "Untagged";
-      if(!state.congs.has(c)) return false;
-    }
+    if(!passesRange(r["Mood"], state.moodMin, state.moodMax, state.excludeUnrated)) return false;
+    if(!passesRange(r["Congregational"], state.congMin, state.congMax, state.excludeUnrated)) return false;
+    if(!passesRange(r["Textual Variance"], state.textVarMin, state.textVarMax, state.excludeUnrated)) return false;
     if(state.chartOnly && String(r["Chart"]||"").trim().toUpperCase() !== "TRUE") return false;
 
     return true;
   });
 
   renderGrid();
+}
+
+// Numeric 0–10 range filter. Blank/unrated rows are included by default;
+// the single "Exclude unrated songs" button flips that for all three sliders at once.
+function passesRange(rawValue, min, max, excludeUnrated){
+  const trimmed = (rawValue||"").trim();
+  if(trimmed===""){
+    return !excludeUnrated;
+  }
+  const num = parseFloat(trimmed);
+  if(isNaN(num)) return !excludeUnrated;
+  return num >= min && num <= max;
 }
 
 function renderGrid(){
@@ -739,7 +906,7 @@ function renderGrid(){
     els.grid.innerHTML = `
       <div class="state-box">
         <h3>No songs match these filters</h3>
-        <p>Try loosening a facet or two — especially Genre, Mood, or Congregational, since most rows aren't tagged yet.</p>
+        <p>Try loosening a slider, unchecking "Exclude unrated songs," or clearing all filters.</p>
         <button onclick="document.getElementById('clearBtn').click()">Clear all filters</button>
       </div>`;
     els.loadMoreWrap.style.display = "none";
@@ -764,12 +931,14 @@ function cardHTML(r){
   const genres = splitMulti(r["Genre"]);
   const mood = (r["Mood"]||"").trim();
   const cong = (r["Congregational"]||"").trim();
+  const textVar = (r["Textual Variance"]||"").trim();
   const isChart = String(r["Chart"]||"").trim().toUpperCase()==="TRUE";
 
   const tags = [];
   genres.forEach(g => tags.push(`<span class="tag">${escapeHTML(g)}</span>`));
   if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
   if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
+  if(textVar) tags.push(`<span class="tag">variance ${escapeHTML(textVar)}</span>`);
   if(isChart) tags.push(`<span class="tag chart">charted</span>`);
 
   return `
@@ -824,6 +993,44 @@ function pauseIcon(){
   return '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16"></rect><rect x="14" y="4" width="5" height="16"></rect></svg>';
 }
 
+// Dual-handle range slider (two overlapping <input type=range> elements).
+// Keeps min <= max, updates the gold fill bar, and pushes values into state.
+const sliderResets = [];
+function setupDualSlider(prefix, minKey, maxKey){
+  const minEl = document.getElementById(prefix + 'Min');
+  const maxEl = document.getElementById(prefix + 'Max');
+  const fillEl = document.getElementById(prefix + 'Fill');
+
+  function update(movedEl){
+    let minV = parseInt(minEl.value, 10);
+    let maxV = parseInt(maxEl.value, 10);
+    if(minV > maxV){
+      if(movedEl === minEl){ maxV = minV; maxEl.value = maxV; }
+      else { minV = maxV; minEl.value = minV; }
+    }
+    state[minKey] = minV;
+    state[maxKey] = maxV;
+    fillEl.style.left = (minV/10*100) + '%';
+    fillEl.style.width = ((maxV-minV)/10*100) + '%';
+  }
+
+  minEl.addEventListener('input', ()=>{ update(minEl); visibleCount=PAGE_SIZE; applyFilters(); });
+  maxEl.addEventListener('input', ()=>{ update(maxEl); visibleCount=PAGE_SIZE; applyFilters(); });
+  update();
+
+  sliderResets.push(()=>{ minEl.value=0; maxEl.value=10; update(); });
+}
+setupDualSlider('mood', 'moodMin', 'moodMax');
+setupDualSlider('cong', 'congMin', 'congMax');
+setupDualSlider('textVar', 'textVarMin', 'textVarMax');
+
+els.excludeUnratedBtn.addEventListener('click', ()=>{
+  state.excludeUnrated = !state.excludeUnrated;
+  els.excludeUnratedBtn.setAttribute('aria-pressed', String(state.excludeUnrated));
+  visibleCount = PAGE_SIZE;
+  applyFilters();
+});
+
 // Facet collapse toggles
 document.querySelectorAll('.facet-title').forEach(t=>{
   t.addEventListener('click', ()=> t.closest('.facet-block').classList.toggle('collapsed'));
@@ -835,10 +1042,12 @@ els.chartToggle.addEventListener('change', e=>{ state.chartOnly = e.target.check
 els.loadMoreBtn.addEventListener('click', ()=>{ visibleCount += PAGE_SIZE; renderGrid(); });
 els.refreshBtn.addEventListener('click', loadData);
 els.clearBtn.addEventListener('click', ()=>{
-  state.search=""; state.psalm=""; state.chartOnly=false;
-  state.genres.clear(); state.moods.clear(); state.congs.clear();
+  state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=false;
+  state.genres.clear();
   els.searchInput.value=""; els.psalmInput.value=""; els.chartToggle.checked=false;
+  els.excludeUnratedBtn.setAttribute('aria-pressed', 'false');
   document.querySelectorAll('.check-list input[type="checkbox"]').forEach(cb=>cb.checked=false);
+  sliderResets.forEach(fn=>fn());
   visibleCount = PAGE_SIZE;
   applyFilters();
 });
