@@ -208,14 +208,31 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    color: var(--text-light);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
     cursor: pointer;
+    transition: color 0.15s ease;
   }
+  .check-row:hover{ color: var(--text-light); }
+  .check-row:has(input:checked){ color: var(--gold); }
   .check-row input[type="checkbox"]{
-    accent-color: var(--gold);
-    width: 14px; height: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    border: 1.5px solid var(--text-muted);
+    background: transparent;
     cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .check-row:hover input[type="checkbox"]{ border-color: var(--gold-dim); }
+  .check-row input[type="checkbox"]:checked{
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
   .check-row .n{
     margin-left: auto;
@@ -223,15 +240,6 @@
     font-size: 10.5px;
     color: var(--text-muted);
   }
-
-  .toggle-row{
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .toggle-row input{ accent-color: var(--gold); width: 14px; height: 14px; }
 
   /* ---------- Dual-handle range slider ---------- */
   .dual-slider{ padding-top: 4px; }
@@ -627,9 +635,9 @@
 <header class="top">
   <div class="top-inner">
     <div>
-      <p class="brand-eyebrow">living psalter browser</p>
+      <p class="brand-eyebrow">living psalter catalog</p>
       <h1>Zion Psalms</h1>
-      <p class="subtitle">Songs drawn from the Book of Psalms, indexed and filterable — pulled live from the source sheet.</p>
+      <p class="subtitle">Contemporary songs drawn from the Book of Psalms composed for today's worship, indexed, crowd-source ranked, and filterable.</p>
     </div>
     <div class="header-meta">
       <span class="count" id="headerCount">—</span>
@@ -713,13 +721,13 @@
 
     <div class="facet-block">
       <div class="facet-body">
-        <button class="exclude-unrated-btn" id="excludeUnratedBtn" aria-pressed="false">Exclude unrated songs</button>
+        <button class="exclude-unrated-btn" id="chartToggleBtn" aria-pressed="false">Charted songs only</button>
       </div>
     </div>
 
     <div class="facet-block">
       <div class="facet-body">
-        <label class="toggle-row"><input type="checkbox" id="chartToggle"> Charted songs only</label>
+        <button class="exclude-unrated-btn" id="excludeUnratedBtn" aria-pressed="false">Exclude unrated songs</button>
       </div>
     </div>
 
@@ -790,7 +798,7 @@ const els = {
   searchInput: document.getElementById('searchInput'),
   psalmInput: document.getElementById('psalmInput'),
   genreList: document.getElementById('genreList'),
-  chartToggle: document.getElementById('chartToggle'),
+  chartToggleBtn: document.getElementById('chartToggleBtn'),
   excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
   sortSelect: document.getElementById('sortSelect'),
   clearBtn: document.getElementById('clearBtn'),
@@ -1206,13 +1214,19 @@ document.querySelectorAll('.facet-title').forEach(t=>{
 
 els.searchInput.addEventListener('input', e=>{ state.search = e.target.value; visibleCount=PAGE_SIZE; applyFilters(); });
 els.psalmInput.addEventListener('input', e=>{ state.psalm = e.target.value; visibleCount=PAGE_SIZE; applyFilters(); });
-els.chartToggle.addEventListener('change', e=>{ state.chartOnly = e.target.checked; visibleCount=PAGE_SIZE; applyFilters(); });
+els.chartToggleBtn.addEventListener('click', ()=>{
+  state.chartOnly = !state.chartOnly;
+  els.chartToggleBtn.setAttribute('aria-pressed', String(state.chartOnly));
+  visibleCount = PAGE_SIZE;
+  applyFilters();
+});
 els.loadMoreBtn.addEventListener('click', ()=>{ visibleCount += PAGE_SIZE; renderGrid(); });
 els.refreshBtn.addEventListener('click', loadData);
 els.clearBtn.addEventListener('click', ()=>{
   state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=false;
   state.genres.clear();
-  els.searchInput.value=""; els.psalmInput.value=""; els.chartToggle.checked=false;
+  els.searchInput.value=""; els.psalmInput.value="";
+  els.chartToggleBtn.setAttribute('aria-pressed', 'false');
   els.excludeUnratedBtn.setAttribute('aria-pressed', 'false');
   document.querySelectorAll('.check-list input[type="checkbox"]').forEach(cb=>cb.checked=false);
   sliderResets.forEach(fn=>fn());
