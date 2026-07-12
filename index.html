@@ -45,7 +45,7 @@
 
   /* ---------- Header ---------- */
   header.top{
-    padding: 44px 32px 28px;
+    padding: 20px 32px 12px;
     border-bottom: 1px solid var(--ink-3);
     background:
       radial-gradient(ellipse 800px 200px at 15% -20%, rgba(199,154,63,0.12), transparent);
@@ -155,6 +155,10 @@
   .facet-block{
     border-top: 1px solid var(--ink-3);
     padding-top: 14px;
+  }
+  .facets > .facet-block:first-child{
+    border-top: none;
+    padding-top: 0;
   }
   .facet-title{
     font-family: var(--font-mono);
@@ -372,9 +376,50 @@
     color: var(--text-muted);
   }
 
+  .sort-control{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .sort-label{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .sort-control select{
+    background: var(--ink-2);
+    border: 1px solid var(--ink-3);
+    color: var(--text-light);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    padding: 7px 28px 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23C79A3F'><path d='M5.5 7.5L10 12l4.5-4.5H5.5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+  }
+  .sort-control select:focus{
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+  .sort-control select:hover{
+    border-color: var(--gold-dim);
+  }
+  @media (max-width: 500px){
+    .sort-label{ display: none; }
+  }
+
   .grid{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 18px;
   }
 
@@ -396,7 +441,7 @@
 
   .art-wrap{
     position: relative;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 21 / 20;
     background: var(--parchment-2);
     overflow: hidden;
   }
@@ -450,11 +495,30 @@
   .play-btn:disabled{ background: var(--parchment-2); color: var(--text-muted); cursor: not-allowed; }
   .play-btn svg{ width: 14px; height: 14px; }
 
+  .chart-badge{
+    position: absolute;
+    bottom: 9px; left: 9px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 2px;
+    background: var(--danger);
+    color: var(--text-light);
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    cursor: default;
+  }
+  a.chart-badge{ cursor: pointer; }
+  a.chart-badge:hover{ filter: brightness(1.1); text-decoration: underline; }
+
   .card-body{
-    padding: 12px 13px 13px;
+    padding: 9px 13px 10px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     flex: 1;
   }
   .track-name{
@@ -502,7 +566,6 @@
     border: 1px solid rgba(74,107,94,0.25);
   }
   .tag.mood{ background: rgba(199,154,63,0.15); color: var(--gold-dim); border-color: rgba(199,154,63,0.3); }
-  .tag.chart{ background: rgba(184,92,74,0.15); color: var(--danger); border-color: rgba(184,92,74,0.3); }
 
   /* ---------- States ---------- */
   .state-box{
@@ -564,7 +627,7 @@
 <header class="top">
   <div class="top-inner">
     <div>
-      <p class="brand-eyebrow">A living psalter index</p>
+      <p class="brand-eyebrow">living psalter browser</p>
       <h1>Zion Psalms</h1>
       <p class="subtitle">Songs drawn from the Book of Psalms, indexed and filterable — pulled live from the source sheet.</p>
     </div>
@@ -670,7 +733,19 @@
   <main>
     <div class="results-bar">
       <span id="resultsCount">Loading…</span>
-      <span id="sourceNote"></span>
+      <label class="sort-control">
+        <span class="sort-label">Sort by</span>
+        <select id="sortSelect">
+          <option value="psalm-asc">Psalm # Ascending</option>
+          <option value="psalm-desc">Psalm # Descending</option>
+          <option value="artist-asc">Artist A–Z</option>
+          <option value="artist-desc">Artist Z–A</option>
+          <option value="date-new">Release Date New–Old</option>
+          <option value="date-old">Release Date Old–New</option>
+          <option value="length-asc">Track Length Ascending</option>
+          <option value="length-desc">Track Length Descending</option>
+        </select>
+      </label>
     </div>
     <div class="grid" id="grid"></div>
     <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
@@ -699,7 +774,8 @@ const state = {
   congMin: 0, congMax: 10,
   textVarMin: 0, textVarMax: 10,
   excludeUnrated: false,
-  chartOnly: false
+  chartOnly: false,
+  sortBy: "psalm-asc"
 };
 
 const els = {
@@ -716,6 +792,7 @@ const els = {
   genreList: document.getElementById('genreList'),
   chartToggle: document.getElementById('chartToggle'),
   excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
+  sortSelect: document.getElementById('sortSelect'),
   clearBtn: document.getElementById('clearBtn'),
 };
 
@@ -902,7 +979,43 @@ function applyFilters(){
     return true;
   });
 
+  sortRows(filteredRows, state.sortBy);
   renderGrid();
+}
+
+function sortRows(rows, sortBy){
+  const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  const dateVal = (v) => {
+    const trimmed = (v||"").trim();
+    if(!trimmed) return null;
+    const t = Date.parse(trimmed);
+    if(!isNaN(t)) return t;
+    const yearMatch = /^\d{4}/.exec(trimmed);
+    return yearMatch ? Date.parse(yearMatch[0] + "-01-01") : null;
+  };
+  const artistKey = (v) => splitMulti(v)[0] || "";
+
+  // Rows with no usable value for the chosen sort field always sink to the bottom,
+  // regardless of ascending/descending direction.
+  const cmp = {
+    "psalm-asc":   (a,b) => nullsLast(num(a["Psalm No"]), num(b["Psalm No"]), (x,y)=>x-y),
+    "psalm-desc":  (a,b) => nullsLast(num(a["Psalm No"]), num(b["Psalm No"]), (x,y)=>y-x),
+    "artist-asc":  (a,b) => artistKey(a["Artist Name(s)"]).localeCompare(artistKey(b["Artist Name(s)"])),
+    "artist-desc": (a,b) => artistKey(b["Artist Name(s)"]).localeCompare(artistKey(a["Artist Name(s)"])),
+    "date-new":    (a,b) => nullsLast(dateVal(a["Album Release Date"]), dateVal(b["Album Release Date"]), (x,y)=>y-x),
+    "date-old":    (a,b) => nullsLast(dateVal(a["Album Release Date"]), dateVal(b["Album Release Date"]), (x,y)=>x-y),
+    "length-asc":  (a,b) => nullsLast(num(a["Track Duration (ms)"]), num(b["Track Duration (ms)"]), (x,y)=>x-y),
+    "length-desc": (a,b) => nullsLast(num(a["Track Duration (ms)"]), num(b["Track Duration (ms)"]), (x,y)=>y-x),
+  };
+
+  function nullsLast(a, b, fn){
+    if(a===null && b===null) return 0;
+    if(a===null) return 1;
+    if(b===null) return -1;
+    return fn(a,b);
+  }
+
+  rows.sort(cmp[sortBy] || cmp["psalm-asc"]);
 }
 
 // Numeric 0–10 range filter. Blank/unrated rows are included by default;
@@ -956,8 +1069,17 @@ function cardHTML(r){
   genres.forEach(g => tags.push(`<span class="tag">${escapeHTML(g)}</span>`));
   if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
   if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
-  if(textVar) tags.push(`<span class="tag">variance ${escapeHTML(textVar)}</span>`);
-  if(isChart) tags.push(`<span class="tag chart">charted</span>`);
+  if(textVar) tags.push(`<span class="tag">var. ${escapeHTML(textVar)}</span>`);
+
+  // "Chart" badge overlays the artwork instead of taking up tag-row space.
+  // Not yet a live link: once a "Chart URL" column is added to the sheet, this
+  // automatically becomes a clickable link to it — no code changes needed.
+  const chartUrl = (r["Chart URL"]||"").trim();
+  const chartBadgeHTML = isChart
+    ? (chartUrl
+        ? `<a class="chart-badge" href="${escapeHTML(chartUrl)}" target="_blank" rel="noopener" title="View chart">Chart</a>`
+        : `<span class="chart-badge" title="Charted — link coming soon">Chart</span>`)
+    : "";
 
   // Track name -> Spotify track link
   const trackUrl = spotifyUrl(r["Track URI"]);
@@ -986,6 +1108,7 @@ function cardHTML(r){
     <div class="art-wrap">
       ${img ? `<img src="${img}" loading="lazy" alt="">` : ""}
       ${psalm ? `<div class="psalm-badge"><span class="lbl">PSALM</span>${psalm}</div>` : ""}
+      ${chartBadgeHTML}
       <button class="play-btn" data-src="${preview}" ${preview? "" : "disabled"} title="${preview? "Play 30s preview" : "No preview available"}">
         <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"></polygon></svg>
       </button>
@@ -1067,6 +1190,11 @@ setupDualSlider('textVar', 'textVarMin', 'textVarMax');
 els.excludeUnratedBtn.addEventListener('click', ()=>{
   state.excludeUnrated = !state.excludeUnrated;
   els.excludeUnratedBtn.setAttribute('aria-pressed', String(state.excludeUnrated));
+  visibleCount = PAGE_SIZE;
+  applyFilters();
+});
+els.sortSelect.addEventListener('change', ()=>{
+  state.sortBy = els.sortSelect.value;
   visibleCount = PAGE_SIZE;
   applyFilters();
 });
