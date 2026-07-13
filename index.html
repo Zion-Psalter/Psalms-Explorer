@@ -591,14 +591,23 @@ padding-top: 8px;
 .tag{
 font-family: var(--font-mono);
 font-size: 9.5px;
-letter-spacing: 0.03em;
+letter-spacing: 0.02em;
 padding: 3px 7px;
 border-radius: 2px;
 background: rgba(74,107,94,0.12);
 color: var(--pine-dim);
 border: 1px solid rgba(74,107,94,0.25);
 }
-.tag.mood{ background: rgba(199,154,63,0.15); color: var(--gold-dim); border-color: rgba(199,154,63,0.3); }
+.tag.mood{
+background: rgba(199,154,63,0.15);
+color: var(--gold-dim);
+border-color: rgba(199,154,63,0.3);
+}
+.tag.textvar{
+background: #174d9426;
+color: var(--pine-dim);
+border-color: #1c41e94d;
+}
 
 /* ---------- States ---------- */
 .state-box{
@@ -1115,7 +1124,7 @@ const tags = [];
 genres.forEach(g => tags.push(`<span class="tag">${escapeHTML(g)}</span>`));
 if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
 if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
-if(textVar) tags.push(`<span class="tag">text var. ${escapeHTML(textVar)}</span>`);
+if(textVar) tags.push(`<span class="tag textvar">text var. ${escapeHTML(textVar)}</span>`);
 
 // "Chart" badge overlays the artwork instead of taking up tag-row space.
 // Not yet a live link: once a "Chart URL" column is added to the sheet, this
