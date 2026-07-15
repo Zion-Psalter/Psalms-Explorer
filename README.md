@@ -1,6 +1,6 @@
-# Zion Psalms — Song Browser
+# Zion Psalms — Psalms Explorer
 
-A faceted-filtering song browser for the Zion Psalms dataset, embedded as an iframe on [singzion.com](https://www.singzion.com). It pulls data live from a Google Sheet, so the site always reflects the current state of the sheet — no rebuild or redeploy needed when the data changes.
+A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an iframe on [singzion.com](https://www.singzion.com). It pulls data live from a Google Sheet, so the site always reflects the current state of the sheet — no rebuild or redeploy needed when the data changes.
 
 **Live site:** `https://[your-org].github.io/song-browser/`
 **Embedded at:** singzion.com (via Google Sites → Insert → Embed → By URL)
