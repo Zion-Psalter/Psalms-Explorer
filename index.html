@@ -502,6 +502,147 @@ color: transparent !important;
 text-decoration: none !important;
 }
 
+/* ---------- v1.1: card action panel, notes, dim overlay ---------- */
+.more-btn{
+  position: absolute;
+  top: 9px; right: 9px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(28,35,51,0.85);
+  border: 1.5px solid var(--gold-dim);
+  color: var(--gold);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.more-btn:hover{ background: var(--ink); transform: scale(1.08); }
+.more-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.more-btn svg{ width: 15px; height: 15px; pointer-events: none; }
+/* small gold dot marks a card that already carries a note */
+.more-btn.has-note::after{
+  content: "";
+  position: absolute; top: -2px; right: -2px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 1.5px solid var(--ink);
+}
+
+.card-panel{
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  display: none;
+  flex-direction: column;
+  padding: 6px 10px 9px;
+  z-index: 2;
+}
+.card.flipped .card-panel{ display: flex; }
+/* Only the overlays sitting on the artwork hide when the panel opens. The
+   Chart badge now lives in the tag row, below the panel, so it stays put. */
+.card.flipped .psalm-badge,
+.card.flipped .play-btn{ opacity: 0; pointer-events: none; }
+
+/* Rows flex to fill whatever height the artwork gives us: compact on desktop,
+   comfortably tappable on mobile, with no scrolling inside the card. */
+.panel-list{
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* keep the first label from colliding with the close button */
+.panel-list .panel-row:first-child{ padding-right: 30px; }
+.panel-row{
+  flex: 1 1 0;
+  min-height: 24px;
+  display: flex; align-items: center; gap: 6px;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(50,60,88,0.55);
+  padding: 0 2px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.12s ease, padding-left 0.12s ease;
+}
+.panel-list .panel-row:last-child{ border-bottom: none; }
+.panel-row:hover{ color: var(--gold); padding-left: 6px; }
+.panel-row:focus-visible{ outline: 2px solid var(--gold); outline-offset: -2px; }
+.panel-row .ext{ margin-left: auto; color: var(--gold-dim); font-size: 10px; }
+
+/* Note editor lives in the same square, so the card never changes height. */
+.note-edit{
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-top: 7px;
+}
+.card.note-editing .panel-list{ display: none; }
+.card.note-editing .note-edit{ display: flex; }
+.note-edit textarea{
+  flex: 1 1 auto;
+  min-height: 0;
+  resize: none;
+  background: var(--ink-2);
+  border: 1px solid var(--ink-3);
+  color: var(--text-light);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 7px 8px;
+  border-radius: var(--radius);
+}
+.note-edit textarea:focus{ outline: none; border-color: var(--gold-dim); }
+.note-edit textarea::placeholder{ color: var(--text-muted); }
+.note-actions{ display: flex; gap: 6px; flex: 0 0 auto; }
+.note-actions button{
+  flex: 1 1 0;
+  font-family: var(--font-mono);
+  font-size: 8px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  padding: 6px 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid var(--gold-dim);
+  background: transparent;
+  color: var(--gold-dim);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.note-actions .save{ background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.note-actions .cancel:hover{ border-color: var(--danger); color: var(--danger); }
+.note-actions .save:hover{ background: var(--gold-dim); border-color: var(--gold-dim); color: var(--text-light); }
+.note-actions button:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* While a note is open, everything else is dimmed and unclickable so a
+   half-written note can't be abandoned by accident. */
+.dim-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(10,14,24,0.74);
+  z-index: 50;
+  display: none;
+}
+.dim-overlay.on{ display: block; }
+.card.note-editing{ z-index: 60; }
+.card.note-editing:hover{ transform: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+@media (prefers-reduced-motion: reduce){
+  .panel-row, .more-btn, .note-actions button, .card{ transition: none; }
+}
+
 .play-btn{
 position: absolute;
 bottom: 9px; right: 9px;
@@ -521,24 +662,21 @@ transition: transform 0.1s ease;
 .play-btn:disabled{ background: var(--parchment-2); color: var(--text-muted); cursor: not-allowed; }
 .play-btn svg{ width: 14px; height: 14px; }
 
+/* Chart is a presence indicator, not a link — the chord chart itself opens
+   from the reverse side. Version 2.0 puts the favorites heart in this strip. */
 .chart-badge{
-position: absolute;
-bottom: 9px; left: 9px;
 font-family: var(--font-mono);
 font-size: 9.5px;
 font-weight: 600;
 letter-spacing: 0.04em;
 text-transform: uppercase;
-padding: 4px 8px;
+padding: 3px 7px;
 border-radius: 2px;
-background: var(--danger);
-color: var(--text-light);
-text-decoration: none;
-box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+background: rgba(176,58,58,0.16);
+color: var(--danger);
+border: 1px solid rgba(176,58,58,0.4);
 cursor: default;
 }
-a.chart-badge{ cursor: pointer; }
-a.chart-badge:hover{ filter: brightness(1.1); text-decoration: underline; }
 
 .rate-btn{
   display: block;
@@ -681,6 +819,8 @@ display: inline-block;
 </style>
 </head>
 <body>
+<div class="dim-overlay" id="dimOverlay" aria-hidden="true"></div>
+
 
 <!-- RefTagger: turns Bible references (e.g. "Psalm 23") found in the page text into
 hoverable tooltips showing the verse. It only scans once on load, before any song
@@ -1196,14 +1336,11 @@ if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
 if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
 if(textVar) tags.push(`<span class="tag textvar">text var. ${escapeHTML(textVar)}</span>`);
 
-// "Chart" badge overlays the artwork instead of taking up tag-row space.
-// Not yet a live link: once a "Chart URL" column is added to the sheet, this
-// automatically becomes a clickable link to it — no code changes needed.
-const chartUrl = (r["Chart URL"]||"").trim();
+// "Chart" (column V) is a yes/no flag meaning a chord chart exists for this
+// song. It's an indicator only — the actual link lives on the card's reverse
+// side, sourced from "Chord Chart URL" (column W).
 const chartBadgeHTML = isChart
-? (chartUrl
-? `<a class="chart-badge" href="${escapeHTML(chartUrl)}" target="_blank" rel="noopener" title="View chart">Chart</a>`
-: `<span class="chart-badge" title="Charted — link coming soon">Chart</span>`)
+? `<span class="chart-badge" title="Download Chord Chart in ⋮ Menu">Chart</span>`
 : "";
 
 // Track name -> Spotify track link
@@ -1233,6 +1370,44 @@ const albumNameHTML = albumUrl
 const trackArtist = `${(r["Track Name"]||"").trim()} || ${(r["Artist Name(s)"]||"").trim()}`;
 const rateUrl = `${FORM_BASE_URL}?${FORM_TRACK_ARTIST_PARAM}=${encodeURIComponent(trackArtist)}`;
 
+// --- v1.1 action panel -------------------------------------------------
+// Stable per-song key for locally saved notes. Track URI is permanent; the
+// name pair is only a fallback for rows missing a URI.
+const noteKey = (r["Track URI"]||"").trim() || trackArtist;
+const savedNote = noteGet(noteKey);
+
+// Optional link columns. Each row is omitted entirely when its cell is empty —
+// a missing link is better than a dead one.
+const lyricsUrl = (r["Lyrics URL"]||"").trim();
+const chordsUrl = (r["Chord Chart URL"]||"").trim();
+const ccliUrl   = (r["CCLI URL"]||"").trim();
+
+function extRow(label, href, title){
+  if(!href) return "";
+  return `<a class="panel-row" href="${escapeHTML(href)}" target="_blank" rel="noopener"${title?` title="${escapeHTML(title)}"`:""}>${label}<span class="ext" aria-hidden="true">&#8599;</span></a>`;
+}
+
+const panelRows = [
+  psalm ? extRow(`Read Psalm ${escapeHTML(psalm)}`, `https://www.esv.org/Psalm+${encodeURIComponent(psalm)}/`) : "",
+  extRow("Lyrics", lyricsUrl),
+  extRow("Chord chart", chordsUrl),
+  extRow("CCLI info", ccliUrl),
+  extRow("Rate this song", rateUrl),
+  `<button type="button" class="panel-row note-row">${savedNote ? "Edit my note" : "Add my note"}</button>`
+].join("");
+
+const panelHTML = `
+<div class="card-panel">
+  <div class="panel-list">${panelRows}</div>
+  <div class="note-edit">
+    <textarea placeholder="Notes for this song — where it fits, what worked..." maxlength="600"></textarea>
+    <div class="note-actions">
+      <button type="button" class="cancel">Cancel</button>
+      <button type="button" class="save">Save</button>
+    </div>
+  </div>
+</div>`;
+
 // RefTagger only tags references with a verse number, never a bare chapter like
 // "Psalm 23" — and the sheet has no per-song verse data. ".psalm-hover-ref" is an
 // invisible span carrying "Psalm N:1-200"; RefTagger tags it (its ref.ly/Biblia
@@ -1240,7 +1415,7 @@ const rateUrl = `${FORM_BASE_URL}?${FORM_TRACK_ARTIST_PARAM}=${encodeURIComponen
 // CSS below stretches the resulting link to cover the whole circular badge so hovering
 // anywhere on it shows the real full-psalm preview tooltip.
 return `
-<div class="card">
+<div class="card" data-note-key="${escapeHTML(noteKey)}">
 <div class="art-wrap">
 ${img ? `<img src="${img}" loading="lazy" alt="">` : ""}
 ${psalm ? `<div class="psalm-badge"><span class="lbl">Psalm</span> ${psalm}<span class="psalm-hover-ref" data-psalm="${escapeHTML(psalm)}" aria-hidden="true">Psalm ${psalm}:1-200</span></div>` : ""}
@@ -1248,16 +1423,131 @@ ${chartBadgeHTML}
 <button class="play-btn" data-src="${preview}" ${preview? "" : "disabled"} title="${preview? "Play 30s preview" : "No preview available"}">
 <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"></polygon></svg>
 </button>
+<button type="button" class="more-btn${savedNote ? ' has-note' : ''}" aria-label="More options for this song" aria-expanded="false" title="More options">
+<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+</button>
+${panelHTML}
 </div>
 <div class="card-body">
 <div class="track-name">${trackNameHTML}</div>
 <div class="artist-name">${artistNameHTML}</div>
 <div class="album-line">${albumNameHTML}${year? " · "+year : ""}${r["Track Duration (ms)"]? " · "+fmtDuration(r["Track Duration (ms)"]) : ""}</div>
-<div class="tag-row">${tags.join("")}</div>
-<a class="rate-btn" href="${rateUrl}" target="_blank" rel="noopener">Rate this song</a>
+<div class="tag-row">${chartBadgeHTML}${tags.join("")}</div>
 </div>
 </div>`;
 }
+
+/* ---------- v1.1: action panel, local notes, dim overlay ---------- */
+// Notes are stored in this browser only, keyed by Track URI. Version 2.0 moves
+// them into the user's own Google Drive so they follow them across devices.
+// localStorage can be blocked outright inside a cross-origin iframe (Safari),
+// so every access is guarded and the feature degrades to read-only rather
+// than throwing.
+const NOTE_PREFIX = "zp-note:";
+let notesWritable = true;
+
+function noteGet(key){
+  try{ return localStorage.getItem(NOTE_PREFIX + key) || ""; }
+  catch(e){ notesWritable = false; return ""; }
+}
+function noteSet(key, val){
+  try{
+    if(val) localStorage.setItem(NOTE_PREFIX + key, val);
+    else localStorage.removeItem(NOTE_PREFIX + key);
+    return true;
+  }catch(e){ notesWritable = false; return false; }
+}
+
+const DOTS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
+const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+
+const dimEl = document.getElementById('dimOverlay');
+let noteOriginal = "";
+
+function panelClose(card){
+  if(!card) return;
+  card.classList.remove('flipped', 'note-editing');
+  const btn = card.querySelector('.more-btn');
+  if(btn){ btn.innerHTML = DOTS_SVG; btn.setAttribute('aria-expanded', 'false'); btn.title = "More options"; }
+}
+function closeAllPanels(except){
+  els.grid.querySelectorAll('.card.flipped').forEach(c=>{ if(c !== except) panelClose(c); });
+}
+function panelOpen(card){
+  closeAllPanels(card);
+  card.classList.add('flipped');
+  const btn = card.querySelector('.more-btn');
+  btn.innerHTML = CLOSE_SVG;
+  btn.setAttribute('aria-expanded', 'true');
+  btn.title = "Close";
+}
+
+function noteEditOpen(card){
+  const key = card.getAttribute('data-note-key') || "";
+  const ta = card.querySelector('.note-edit textarea');
+  noteOriginal = noteGet(key);
+  ta.value = noteOriginal;
+  if(!notesWritable){
+    ta.placeholder = "This browser is blocking saved notes. Open the full page in its own tab to use them.";
+  }
+  card.classList.add('note-editing');
+  dimEl.classList.add('on');
+  ta.focus();
+}
+function noteEditExit(card){
+  card.classList.remove('note-editing');
+  dimEl.classList.remove('on');
+  noteOriginal = "";
+}
+function noteEditCancel(card){
+  const ta = card.querySelector('.note-edit textarea');
+  if(ta.value !== noteOriginal && !confirm("Discard your note?")) return;
+  noteEditExit(card);
+}
+function noteEditSave(card){
+  const key = card.getAttribute('data-note-key') || "";
+  const ta = card.querySelector('.note-edit textarea');
+  const val = ta.value.trim();
+  const ok = noteSet(key, val);
+  if(!ok){
+    alert("This browser won't let the page save notes here. Open the full page in its own tab and try again.");
+    return;
+  }
+  const moreBtn = card.querySelector('.more-btn');
+  moreBtn.classList.toggle('has-note', !!val);
+  const noteRow = card.querySelector('.note-row');
+  if(noteRow) noteRow.textContent = val ? "Edit my note" : "Add my note";
+  noteEditExit(card);
+}
+
+// One delegated listener survives every re-render of the grid.
+els.grid.addEventListener('click', e=>{
+  const card = e.target.closest('.card');
+  if(!card) return;
+
+  if(e.target.closest('.more-btn')){
+    if(card.classList.contains('note-editing')) return;
+    card.classList.contains('flipped') ? panelClose(card) : panelOpen(card);
+    return;
+  }
+  if(e.target.closest('.note-row')){ noteEditOpen(card); return; }
+  if(e.target.closest('.note-actions .save')){ noteEditSave(card); return; }
+  if(e.target.closest('.note-actions .cancel')){ noteEditCancel(card); return; }
+});
+
+// Clicking the dimmed backdrop is a cancel, same as the button.
+dimEl.addEventListener('click', ()=>{
+  const card = els.grid.querySelector('.card.note-editing');
+  if(card) noteEditCancel(card);
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key !== "Escape") return;
+  const editing = els.grid.querySelector('.card.note-editing');
+  if(editing){ noteEditCancel(editing); return; }
+  const flipped = els.grid.querySelector('.card.flipped');
+  if(flipped) panelClose(flipped);
+});
 
 function escapeHTML(str){
 return String(str).replace(/[&<>"']/g, s => ({
@@ -1366,4 +1656,5 @@ applyFilters();
 loadData();
 </script>
 
-</
+</body>
+</html>

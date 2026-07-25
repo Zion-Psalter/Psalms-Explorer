@@ -7,6 +7,20 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 
 ---
 
+## Features (current: v1.1)
+
+- **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), and Mood / Congregational / Textual Variance dual-handle sliders, plus a "Charted songs only" and an "Exclude unrated songs" toggle. Any combination can be cleared at once.
+- **Sorting** — by Psalm number, artist, release date, or track length, ascending or descending.
+- **30-second audio preview** — play/pause button on each card (when the sheet has a preview URL); starting one stops whatever was already playing.
+- **Spotify deep links** — track, artist, and album names link out to their Spotify pages whenever the sheet has a URI for them.
+- **Psalm passage preview on hover** — hovering a song's Psalm badge shows a live tooltip preview of that Psalm's text (via RefTagger/Logos), and clicking it opens the full chapter on `app.logos.com` in a new tab.
+- **Per-song "⋮" menu** — click the dots on a card to flip it and reveal: a "Read Psalm N" link (ESV.org), Lyrics, Chord chart, and CCLI info links (each only shown if the sheet has that URL), "Rate this song," and a personal note field.
+- **Personal notes** — free-text notes per song, saved locally in the visitor's own browser (not shared with anyone, doesn't sync across devices). A gold dot on the ⋮ button marks a card that already has one.
+- **"Rate this song"** — opens a pre-filled evaluation form (Fillout) for that specific track.
+- **Live data refresh** — a "refresh data" button re-pulls the Google Sheet without reloading the page.
+
+---
+
 ## How it works
 
 This is a single self-contained file: **`index.html`**. There's no build step, no dependencies to install, and no backend — everything (HTML, CSS, and JavaScript) lives in that one file. To edit it, you can use GitHub's built-in web editor; no local setup required.
@@ -36,15 +50,18 @@ The app expects these exact column headers in the sheet. If a column is renamed,
 | `Album Image URL` | Card artwork |
 | `Track Duration (ms)` | Duration shown on card |
 | `Track Preview URL` | 30-second audio preview button |
-| `Track URI` | Links the track title to its Spotify page |
+| `Track URI` | Links the track title to its Spotify page; also the storage key for a listener's personal note on that song |
 | `Artist URI(s)` | Links each artist name to their Spotify page (comma-separated, paired positionally with `Artist Name(s)`) |
 | `Album URI` | Links the album name to its Spotify page |
-| `Psalm No` | Psalm badge + Psalm number search |
+| `Psalm No` | Psalm badge, Psalm number search, the badge's hover preview of the passage, and the "Read Psalm" link in the ⋮ menu |
 | `Genre` | Genre filter (comma-separated values split into multiple tags) |
 | `Mood` | Mood slider (0–10 scale) |
 | `Congregational` | Congregational slider (0–10 scale) |
 | `Textual Variance` | Textual Variance slider (0–10 scale) |
-| `Chart` | "Charted songs only" toggle (expects `TRUE` / `FALSE`) |
+| `Chart` | "Charted songs only" toggle and the "Chart" tag (expects `TRUE` / `FALSE`) — an indicator only, doesn't need to point anywhere itself |
+| `Lyrics URL` | "Lyrics" link in the ⋮ menu (row omitted if blank) |
+| `Chord Chart URL` | "Chord chart" link in the ⋮ menu (row omitted if blank) |
+| `CCLI URL` | "CCLI info" link in the ⋮ menu (row omitted if blank) |
 
 `Track URI`, `Artist URI(s)`, and `Album URI` are expected in Spotify's native format (e.g. `spotify:track:1cCjXaDbFq6kFQXOdu3KuT`) — this is what Spotify's own export tools (like Exportify) produce by default. If a row is missing one of these, that piece of text just displays as plain, non-clickable text rather than breaking anything.
 
@@ -95,6 +112,9 @@ That row's URI column is either empty or not in Spotify's standard `spotify:trac
 
 **Changes to `index.html` aren't showing up live**
 Check the repo's **Actions** tab for a "pages build and deployment" run — it should show a green checkmark within a minute or two of your commit. If it's still not showing, try a hard refresh (Ctrl/Cmd+Shift+R).
+
+**"This browser won't let the page save notes here" when saving a note**
+Personal notes are stored in the visitor's browser via `localStorage`, keyed by that song's `Track URI`. Some browsers (notably Safari) block this inside a cross-origin iframe embed — which is how this app is normally embedded on singzion.com. Opening the live site directly in its own tab (not embedded) resolves it. Because notes are per-browser only, they also won't appear on a different device or browser, and clearing site data/cache will erase them.
 
 ---
 
