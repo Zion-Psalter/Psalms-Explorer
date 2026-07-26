@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Zion Psalms Explorer — v1.1 — 2026-07-25 -->
+<!-- Zion Psalms Explorer — v1.2 — 2026-07-25 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -100,24 +100,8 @@ color: var(--text-light);
 display: block;
 font-family: var(--font-display);
 font-weight: 600;
+margin-bottom: 8px;
 }
-.refresh-btn{
-margin-top: 8px;
-background: none;
-border: 1px solid var(--ink-3);
-color: var(--text-muted);
-font-family: var(--font-mono);
-font-size: 11px;
-letter-spacing: 0.05em;
-padding: 6px 12px;
-border-radius: var(--radius);
-cursor: pointer;
-transition: all 0.15s ease;
-}
-.refresh-btn:hover{ border-color: var(--gold); color: var(--gold); }
-.refresh-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
-.refresh-btn.spinning{ opacity: 0.5; pointer-events: none; }
-
 /* ---------- Layout ---------- */
 .layout{
 max-width: 1280px;
@@ -143,6 +127,7 @@ main::-webkit-scrollbar-thumb{ background: var(--ink-3); border-radius: 3px; }
 display: flex;
 flex-direction: column;
 gap: 22px;
+padding-bottom: 24px;
 }
 @media (min-width: 861px){
 .facets{
@@ -377,16 +362,6 @@ text-align: left;
 .clear-btn:hover{ text-decoration: underline; }
 
 /* ---------- Results ---------- */
-.results-bar{
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 18px;
-font-family: var(--font-mono);
-font-size: 12px;
-color: var(--text-muted);
-}
-
 .sort-control{
 display: flex;
 align-items: center;
@@ -432,6 +407,7 @@ border-color: var(--gold-dim);
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 gap: 18px;
+margin-top: 18px;
 }
 
 .card{
@@ -812,11 +788,6 @@ transition: all 0.15s ease;
 *{ transition: none !important; animation: none !important; }
 }
 
-.spin{
-animation: spin 0.9s linear infinite;
-display: inline-block;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -852,8 +823,19 @@ var refTagger = {
 </div>
 <div class="header-meta">
 <span class="count" id="headerCount">—</span>
-<span id="lastUpdated">loading…</span><br>
-<button class="refresh-btn" id="refreshBtn">↻ refresh data</button>
+<label class="sort-control">
+<span class="sort-label">Sort by</span>
+<select id="sortSelect">
+<option value="psalm-asc">Psalm # Ascending</option>
+<option value="psalm-desc">Psalm # Descending</option>
+<option value="artist-asc">Artist A–Z</option>
+<option value="artist-desc">Artist Z–A</option>
+<option value="date-new">Release Date New–Old</option>
+<option value="date-old">Release Date Old–New</option>
+<option value="length-asc">Track Length Ascending</option>
+<option value="length-desc">Track Length Descending</option>
+</select>
+</label>
 </div>
 </div>
 </header>
@@ -880,7 +862,7 @@ var refTagger = {
 </div>
 
 <div class="facet-block" id="moodBlock">
-<p class="facet-title"><span>Mood</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="Helpful in situating an arrangement within the emotional character of your liturgy.">Mood</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -897,7 +879,7 @@ var refTagger = {
 </div>
 
 <div class="facet-block" id="congBlock">
-<p class="facet-title"><span>Congregational</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="Some songs are encouraging to listen to, others are easy to pick up and sing together.">Congregational</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -914,7 +896,7 @@ var refTagger = {
 </div>
 
 <div class="facet-block" id="textVarBlock">
-<p class="facet-title"><span>Textual Variance</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="The spectrum from truncated or interpreted, to word-for-word from an English translation.">Textual Variance</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -950,22 +932,6 @@ var refTagger = {
 </aside>
 
 <main>
-<div class="results-bar">
-<span id="resultsCount">Loading…</span>
-<label class="sort-control">
-<span class="sort-label">Sort by</span>
-<select id="sortSelect">
-<option value="psalm-asc">Psalm # Ascending</option>
-<option value="psalm-desc">Psalm # Descending</option>
-<option value="artist-asc">Artist A–Z</option>
-<option value="artist-desc">Artist Z–A</option>
-<option value="date-new">Release Date New–Old</option>
-<option value="date-old">Release Date Old–New</option>
-<option value="length-asc">Track Length Ascending</option>
-<option value="length-desc">Track Length Descending</option>
-</select>
-</label>
-</div>
 <div class="grid" id="grid"></div>
 <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
 <button class="load-more" id="loadMoreBtn">Show more songs</button>
@@ -1013,13 +979,10 @@ sortBy: "psalm-asc"
 
 const els = {
 grid: document.getElementById('grid'),
-resultsCount: document.getElementById('resultsCount'),
 headerCount: document.getElementById('headerCount'),
-lastUpdated: document.getElementById('lastUpdated'),
 sourceNote: document.getElementById('sourceNote'),
 loadMoreWrap: document.getElementById('loadMoreWrap'),
 loadMoreBtn: document.getElementById('loadMoreBtn'),
-refreshBtn: document.getElementById('refreshBtn'),
 searchInput: document.getElementById('searchInput'),
 psalmInput: document.getElementById('psalmInput'),
 genreList: document.getElementById('genreList'),
@@ -1081,9 +1044,7 @@ return obj;
 let jsonpTimeoutHandle = null;
 
 function loadData(){
-els.refreshBtn.classList.add('spinning');
-els.refreshBtn.innerHTML = '<span class="spin">↻</span> loading…';
-els.resultsCount.textContent = "Loading songs…";
+els.headerCount.textContent = "Loading…";
 
 const cbName = "zpCallback_" + Date.now();
 const existingScript = document.getElementById('zpJsonpScript');
@@ -1098,8 +1059,6 @@ if(s) s.remove();
 
 window[cbName] = function(json){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 
 if(!json || json.status === "error"){
 const msg = (json && json.errors && json.errors[0] && json.errors[0].detailed_message) || "Unknown error from Google Sheets.";
@@ -1111,8 +1070,6 @@ const rows = gvizTableToRows(json.table);
 allRows = rows.filter(r => (r["Track Name"] || "").trim() !== "");
 buildFacetOptions();
 applyFilters();
-els.headerCount.textContent = allRows.length.toLocaleString();
-els.lastUpdated.textContent = "as of " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }catch(e){
 console.error(e);
 showLoadError("The sheet responded, but the data couldn't be read. " + e.message);
@@ -1122,8 +1079,6 @@ showLoadError("The sheet responded, but the data couldn't be read. " + e.message
 jsonpTimeoutHandle = setTimeout(() => {
 if(window[cbName]){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 showLoadError("Timed out waiting on Google Sheets. The sheet may not be shared as \"Anyone with the link can view,\" or the gid/sheet may have changed.");
 }
 }, 10000);
@@ -1134,8 +1089,6 @@ script.src = GVIZ_BASE + "&tqx=out:json;responseHandler:" + cbName;
 script.onerror = function(){
 if(window[cbName]){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 showLoadError("Couldn't reach Google Sheets. Check the sheet is shared as \"Anyone with the link can view.\"");
 }
 };
@@ -1149,7 +1102,7 @@ els.grid.innerHTML = `
 <p>${escapeHTML(detail)}</p>
 <button onclick="loadData()">Try again</button>
 </div>`;
-els.resultsCount.textContent = "";
+els.headerCount.textContent = "";
 }
 
 function buildFacetOptions(){
@@ -1264,7 +1217,7 @@ return num >= min && num <= max;
 }
 
 function renderGrid(){
-els.resultsCount.textContent = filteredRows.length.toLocaleString() + " song" + (filteredRows.length===1?"":"s");
+els.headerCount.textContent = filteredRows.length.toLocaleString() + " Songs";
 
 if(filteredRows.length===0){
 els.grid.innerHTML = `
@@ -1641,7 +1594,6 @@ visibleCount = PAGE_SIZE;
 applyFilters();
 });
 els.loadMoreBtn.addEventListener('click', ()=>{ visibleCount += PAGE_SIZE; renderGrid(); });
-els.refreshBtn.addEventListener('click', loadData);
 els.clearBtn.addEventListener('click', ()=>{
 state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=false;
 state.genres.clear();
