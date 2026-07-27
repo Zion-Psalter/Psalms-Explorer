@@ -549,6 +549,65 @@ text-decoration: none !important;
 .spotify-build-btn:disabled{ opacity: 0.45; cursor: not-allowed; filter: none; }
 .spotify-build-btn svg{ width: 14px; height: 14px; flex-shrink: 0; }
 
+/* Manual copy-to-clipboard fallback, shown when the Clipboard API is blocked
+(e.g. the singzion.com iframe embed can't grant it write permission). */
+.copy-fallback-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(10,14,24,0.74);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.copy-fallback-box{
+  background: var(--ink);
+  border: 1px solid var(--gold-dim);
+  border-radius: var(--radius);
+  padding: 16px;
+  max-width: 480px;
+  width: 100%;
+}
+.copy-fallback-box p{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-light);
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+.copy-fallback-box textarea{
+  width: 100%;
+  height: 160px;
+  box-sizing: border-box;
+  resize: none;
+  background: var(--ink-2);
+  border: 1px solid var(--ink-3);
+  border-radius: var(--radius);
+  color: var(--text-light);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px;
+}
+.copy-fallback-actions{
+  text-align: right;
+  margin-top: 10px;
+}
+.copy-fallback-actions button{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 7px 16px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.copy-fallback-actions button:hover{ background: var(--gold-dim); }
+
 /* ---------- v1.1: card action panel, notes, dim overlay ---------- */
 .more-btn{
   position: absolute;
@@ -1756,31 +1815,61 @@ els.favOnlyBtn.addEventListener('click', () => {
 
 // Build Spotify Playlist — copies all favorited Spotify URIs to clipboard so
 // the user can paste them straight into a new Spotify playlist. No API needed.
+//
+// The Clipboard API is blocked in some contexts this app actually runs in —
+// notably the singzion.com embed, where Google Sites' "Embed by URL" iframe
+// has no way to grant it "allow=clipboard-write" — so navigator.clipboard.
+// writeText() reliably rejects there. showManualCopyBox() is the fallback:
+// a plain, visible, pre-selected textarea. Selecting text and pressing
+// Ctrl/Cmd+C is a native browser action, not gated by any clipboard
+// permission, so it always works even when the API doesn't.
 els.spotifyBuildBtn.addEventListener('click', () => {
   if(!favoriteUris.size){
     alert("You have no favorites to export yet.");
     return;
   }
   const uris = [...favoriteUris].join('\n');
-  navigator.clipboard.writeText(uris).then(() => {
-    const orig = els.spotifyBuildBtn.innerHTML;
-    els.spotifyBuildBtn.textContent = '✓ Copied to clipboard!';
-    els.spotifyBuildBtn.disabled = true;
-    setTimeout(() => {
-      els.spotifyBuildBtn.innerHTML = orig;
-      els.spotifyBuildBtn.disabled = false;
-    }, 2800);
-  }).catch(() => {
-    // Fallback: show a textarea they can copy manually (e.g. iOS Safari)
-    const box = document.createElement('textarea');
-    box.value = uris;
-    box.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80vw;height:40vh;z-index:9999;font-size:12px;padding:10px;';
-    document.body.appendChild(box);
-    box.select();
-    alert('Select all and copy these URIs, then paste them into a new Spotify playlist.\n\nClose this box when done.');
-    document.body.removeChild(box);
-  });
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(uris).then(showCopiedFeedback).catch(() => showManualCopyBox(uris));
+  }else{
+    showManualCopyBox(uris);
+  }
 });
+
+function showCopiedFeedback(){
+  const orig = els.spotifyBuildBtn.innerHTML;
+  els.spotifyBuildBtn.textContent = '✓ Copied to clipboard!';
+  els.spotifyBuildBtn.disabled = true;
+  setTimeout(() => {
+    els.spotifyBuildBtn.innerHTML = orig;
+    els.spotifyBuildBtn.disabled = false;
+  }, 2800);
+}
+
+function showManualCopyBox(text){
+  const overlay = document.createElement('div');
+  overlay.className = 'copy-fallback-overlay';
+  overlay.innerHTML = `
+    <div class="copy-fallback-box">
+      <p>Couldn't copy automatically — select the text below and copy it yourself (Ctrl/Cmd+C), then paste it into a new Spotify playlist.</p>
+      <textarea readonly></textarea>
+      <div class="copy-fallback-actions"><button type="button">Close</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const ta = overlay.querySelector('textarea');
+  ta.value = text;
+  ta.focus();
+  ta.select();
+
+  function close(){
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e){ if(e.key === "Escape") close(); }
+  document.addEventListener('keydown', onKey);
+  overlay.querySelector('button').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
+}
 
 els.signInBtn.addEventListener('click', () => {
   if(currentUser){ auth.signOut(); return; }
