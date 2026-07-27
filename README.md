@@ -17,7 +17,7 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 - **Psalm passage preview on hover** — hovering a song's Psalm badge shows a live tooltip preview of that Psalm's text (via RefTagger/Logos), and clicking it opens the full chapter on `app.logos.com` in a new tab.
 - **Per-song "⋮" menu** — click the dots on a card to flip it and reveal: a "Read Psalm N" link (ESV.org), Lyrics, Chord chart, and CCLI info links (each only shown if the sheet has that URL), and "Rate this song."
 - **Google sign-in & Favorites** — "Sign in with Google" in the header (via Firebase Auth). Once signed in, a heart toggle appears on every card; favorites are saved to that Google account (via Firestore), so they follow the same visitor across devices and browsers. "My Favorites" filters to just those songs and shows a live `(#)` count of how many are saved.
-- **Build Spotify Playlist** — with "My Favorites" on, an action bar appears above the results with a button that copies every favorited track's Spotify URI to the clipboard, ready to paste into a new Spotify playlist.
+- **Export Favorites to CSV** — with "My Favorites" on, an action bar appears above the results with a button that downloads a CSV of every favorited song: Psalm No, Track Name, Artist Name, Album Name, Chord Chart URL, Lyrics URL, CCLI URL. The name and URL columns are clickable links (via Excel/Google Sheets' `=HYPERLINK()` formula) straight to Spotify, the chord chart, lyrics, or CCLI SongSelect.
 - **"Rate this song"** — opens a pre-filled evaluation form (Fillout) for that specific track.
 
 ---
@@ -62,7 +62,7 @@ The app expects these exact column headers in the sheet. If a column is renamed,
 | `Album Image URL` | Card artwork |
 | `Track Duration (ms)` | Duration shown on card |
 | `Track Preview URL` | 30-second audio preview button |
-| `Track URI` | Links the track title to its Spotify page; also the key used to identify a song as a Favorite and in "Build Spotify Playlist" |
+| `Track URI` | Links the track title to its Spotify page; also the key used to identify a song as a Favorite and to link it in the "Export Favorites to CSV" download |
 | `Artist URI(s)` | Links each artist name to their Spotify page (comma-separated, paired positionally with `Artist Name(s)`) |
 | `Album URI` | Links the album name to its Spotify page |
 | `Psalm No` | Psalm badge, Psalm number search, the badge's hover preview of the passage, and the "Read Psalm" link in the ⋮ menu |
