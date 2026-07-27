@@ -530,83 +530,24 @@ text-decoration: none !important;
   letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--gold-dim);
 }
-.spotify-build-btn{
+.csv-export-btn{
   font-family: var(--font-mono);
   font-size: 8.5px; font-weight: 700;
   letter-spacing: 0.16em; text-transform: uppercase;
   padding: 7px 13px;
   border-radius: var(--radius);
-  background: #1DB954;
-  color: #000;
+  background: var(--gold);
+  color: var(--ink);
   border: none;
   cursor: pointer;
   display: flex; align-items: center; gap: 6px;
   white-space: nowrap;
   transition: filter 0.15s ease;
 }
-.spotify-build-btn:hover{ filter: brightness(1.12); }
-.spotify-build-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
-.spotify-build-btn:disabled{ opacity: 0.45; cursor: not-allowed; filter: none; }
-.spotify-build-btn svg{ width: 14px; height: 14px; flex-shrink: 0; }
-
-/* Manual copy-to-clipboard fallback, shown when the Clipboard API is blocked
-(e.g. the singzion.com iframe embed can't grant it write permission). */
-.copy-fallback-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(10,14,24,0.74);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.copy-fallback-box{
-  background: var(--ink);
-  border: 1px solid var(--gold-dim);
-  border-radius: var(--radius);
-  padding: 16px;
-  max-width: 480px;
-  width: 100%;
-}
-.copy-fallback-box p{
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-light);
-  line-height: 1.5;
-  margin: 0 0 8px;
-}
-.copy-fallback-box textarea{
-  width: 100%;
-  height: 160px;
-  box-sizing: border-box;
-  resize: none;
-  background: var(--ink-2);
-  border: 1px solid var(--ink-3);
-  border-radius: var(--radius);
-  color: var(--text-light);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 8px;
-}
-.copy-fallback-actions{
-  text-align: right;
-  margin-top: 10px;
-}
-.copy-fallback-actions button{
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  padding: 7px 16px;
-  background: var(--gold);
-  color: var(--ink);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.copy-fallback-actions button:hover{ background: var(--gold-dim); }
+.csv-export-btn:hover{ filter: brightness(1.12); }
+.csv-export-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.csv-export-btn:disabled{ opacity: 0.45; cursor: not-allowed; filter: none; }
+.csv-export-btn svg{ width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ---------- v1.1: card action panel, notes, dim overlay ---------- */
 .more-btn{
@@ -1050,9 +991,9 @@ var refTagger = {
 <main>
 <div class="fav-action-bar" id="favActionBar">
   <span class="fav-count" id="favCount"></span>
-  <button type="button" class="spotify-build-btn" id="spotifyBuildBtn">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.077-.496 9.712 1.115a.623.623 0 0 1 .207.856zm1.223-2.722a.779.779 0 0 1-1.072.256c-2.687-1.652-6.785-2.131-9.965-1.166a.779.779 0 0 1-.973-.519.779.779 0 0 1 .519-.973c3.632-1.102 8.147-.568 11.235 1.33a.779.779 0 0 1 .256 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.935.935 0 1 1-.543-1.79c3.532-1.072 9.404-.865 13.115 1.338a.935.935 0 0 1-.955 1.609z"/></svg>
-    Build Spotify Playlist
+  <button type="button" class="csv-export-btn" id="csvExportBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+    Export Favorites to CSV
   </button>
 </div>
 <div class="grid" id="grid"></div>
@@ -1233,7 +1174,7 @@ favOnlyBtn: document.getElementById('favOnlyBtn'),
 favOnlyCount: document.getElementById('favOnlyCount'),
 favActionBar: document.getElementById('favActionBar'),
 favCount: document.getElementById('favCount'),
-spotifyBuildBtn: document.getElementById('spotifyBuildBtn'),
+csvExportBtn: document.getElementById('csvExportBtn'),
 };
 
 function fmtDuration(ms){
@@ -1813,62 +1754,78 @@ els.favOnlyBtn.addEventListener('click', () => {
   applyFilters();
 });
 
-// Build Spotify Playlist — copies all favorited Spotify URIs to clipboard so
-// the user can paste them straight into a new Spotify playlist. No API needed.
-//
-// The Clipboard API is blocked in some contexts this app actually runs in —
-// notably the singzion.com embed, where Google Sites' "Embed by URL" iframe
-// has no way to grant it "allow=clipboard-write" — so navigator.clipboard.
-// writeText() reliably rejects there. showManualCopyBox() is the fallback:
-// a plain, visible, pre-selected textarea. Selecting text and pressing
-// Ctrl/Cmd+C is a native browser action, not gated by any clipboard
-// permission, so it always works even when the API doesn't.
-els.spotifyBuildBtn.addEventListener('click', () => {
+// Export Favorites to CSV — downloads a CSV of the signed-in user's favorited
+// songs: Psalm No, Track Name, Artist Name, Album Name, Chord Chart URL,
+// Lyrics URL, CCLI URL. Plain CSV has no concept of a hyperlink, so the name/
+// URL columns use Excel & Google Sheets' =HYPERLINK(url,"label") formula
+// syntax instead — both render it as a real clickable link, but a plain text
+// editor would just show the formula text. A song can have multiple artists;
+// since one cell can only link to one place, the cell shows every artist
+// name but links to the first artist's Spotify page.
+els.csvExportBtn.addEventListener('click', () => {
   if(!favoriteUris.size){
     alert("You have no favorites to export yet.");
     return;
   }
-  const uris = [...favoriteUris].join('\n');
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(uris).then(showCopiedFeedback).catch(() => showManualCopyBox(uris));
-  }else{
-    showManualCopyBox(uris);
-  }
+  exportFavoritesToCSV();
 });
 
-function showCopiedFeedback(){
-  const orig = els.spotifyBuildBtn.innerHTML;
-  els.spotifyBuildBtn.textContent = '✓ Copied to clipboard!';
-  els.spotifyBuildBtn.disabled = true;
-  setTimeout(() => {
-    els.spotifyBuildBtn.innerHTML = orig;
-    els.spotifyBuildBtn.disabled = false;
-  }, 2800);
+function csvField(value){
+  const s = String(value == null ? "" : value);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
-function showManualCopyBox(text){
-  const overlay = document.createElement('div');
-  overlay.className = 'copy-fallback-overlay';
-  overlay.innerHTML = `
-    <div class="copy-fallback-box">
-      <p>Couldn't copy automatically — select the text below and copy it yourself (Ctrl/Cmd+C), then paste it into a new Spotify playlist.</p>
-      <textarea readonly></textarea>
-      <div class="copy-fallback-actions"><button type="button">Close</button></div>
-    </div>`;
-  document.body.appendChild(overlay);
-  const ta = overlay.querySelector('textarea');
-  ta.value = text;
-  ta.focus();
-  ta.select();
+// Wraps `label` as a clickable spreadsheet hyperlink to `url`; falls back to
+// plain `label` text when there's no url to link to (e.g. no Spotify URI).
+function csvLink(url, label){
+  if(!url) return csvField(label || "");
+  const safeLabel = String(label || url).replace(/"/g, '""');
+  return csvField(`=HYPERLINK("${url}","${safeLabel}")`);
+}
 
-  function close(){
-    overlay.remove();
-    document.removeEventListener('keydown', onKey);
-  }
-  function onKey(e){ if(e.key === "Escape") close(); }
-  document.addEventListener('keydown', onKey);
-  overlay.querySelector('button').addEventListener('click', close);
-  overlay.addEventListener('click', e => { if(e.target === overlay) close(); });
+// For the URL-only columns (Chord Chart/Lyrics/CCLI): a link when the sheet
+// has one, otherwise a genuinely empty cell rather than an unlinked label.
+function csvUrlOnly(rawUrl, label){
+  const url = (rawUrl||"").trim();
+  return url ? csvLink(url, label) : "";
+}
+
+function exportFavoritesToCSV(){
+  const rows = allRows.filter(r => favoriteUris.has((r["Track URI"]||"").trim()));
+  sortRows(rows, "psalm-asc");
+
+  const header = ["Psalm No","Track Name","Artist Name","Album Name","Chord Chart URL","Lyrics URL","CCLI URL"];
+  const lines = [header.map(csvField).join(",")];
+
+  rows.forEach(r => {
+    const artistUris = splitMulti(r["Artist URI(s)"]);
+    lines.push([
+      csvField((r["Psalm No"]||"").trim()),
+      csvLink(spotifyUrl(r["Track URI"]), r["Track Name"]),
+      csvLink(spotifyUrl(artistUris[0]), r["Artist Name(s)"]),
+      csvLink(spotifyUrl(r["Album URI"]), r["Album Name"]),
+      csvUrlOnly(r["Chord Chart URL"], "Chord Chart"),
+      csvUrlOnly(r["Lyrics URL"], "Lyrics"),
+      csvUrlOnly(r["CCLI URL"], "CCLI"),
+    ].join(","));
+  });
+
+  const csvContent = lines.join("\r\n");
+  // Leading BOM so Excel reads the file as UTF-8 (otherwise accented
+  // characters in song/artist names can come out garbled). Built via
+  // fromCharCode rather than a literal/escaped character in source, since
+  // an invisible U+FEFF sitting directly in the file is easy for editors
+  // and tools to silently mangle.
+  const BOM = String.fromCharCode(0xFEFF);
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `zion-psalms-favorites-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 els.signInBtn.addEventListener('click', () => {
