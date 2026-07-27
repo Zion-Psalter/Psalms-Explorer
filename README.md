@@ -7,17 +7,18 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 
 ---
 
-## Features (current: v1.1)
+## Features (current: v2.0)
 
-- **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), and Mood / Congregational / Textual Variance dual-handle sliders, plus a "Charted songs only" and an "Exclude unrated songs" toggle. Any combination can be cleared at once.
-- **Sorting** — by Psalm number, artist, release date, or track length, ascending or descending.
+- **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), Mood / Congregational / Textual Variance dual-handle sliders (each label has a hover tooltip explaining what it means), a "Charted songs only" toggle, an "Exclude unrated songs" toggle, and — once signed in — a "My Favorites" toggle. Any combination can be cleared at once.
+- **Sorting** — by Psalm number, artist, release date, or track length, ascending or descending, from the dropdown in the header.
+- **Live song count** — the number in the header always reflects how many songs match your *current* filters, not a static total.
 - **30-second audio preview** — play/pause button on each card (when the sheet has a preview URL); starting one stops whatever was already playing.
 - **Spotify deep links** — track, artist, and album names link out to their Spotify pages whenever the sheet has a URI for them.
 - **Psalm passage preview on hover** — hovering a song's Psalm badge shows a live tooltip preview of that Psalm's text (via RefTagger/Logos), and clicking it opens the full chapter on `app.logos.com` in a new tab.
-- **Per-song "⋮" menu** — click the dots on a card to flip it and reveal: a "Read Psalm N" link (ESV.org), Lyrics, Chord chart, and CCLI info links (each only shown if the sheet has that URL), "Rate this song," and a personal note field.
-- **Personal notes** — free-text notes per song, saved locally in the visitor's own browser (not shared with anyone, doesn't sync across devices). A gold dot on the ⋮ button marks a card that already has one.
+- **Per-song "⋮" menu** — click the dots on a card to flip it and reveal: a "Read Psalm N" link (ESV.org), Lyrics, Chord chart, and CCLI info links (each only shown if the sheet has that URL), and "Rate this song."
+- **Google sign-in & Favorites** — "Sign in with Google" in the header (via Firebase Auth). Once signed in, a heart toggle appears on every card; favorites are saved to that Google account (via Firestore), so they follow the same visitor across devices and browsers. "My Favorites" filters to just those songs and shows a live `(#)` count of how many are saved.
+- **Build Spotify Playlist** — with "My Favorites" on, an action bar appears above the results with a button that copies every favorited track's Spotify URI to the clipboard, ready to paste into a new Spotify playlist.
 - **"Rate this song"** — opens a pre-filled evaluation form (Fillout) for that specific track.
-- **Live data refresh** — a "refresh data" button re-pulls the Google Sheet without reloading the page.
 
 ---
 
@@ -37,6 +38,17 @@ On every page load, the app fetches the sheet's data using Google's `gviz/tq` en
 
 **Important:** the sheet must stay shared as **"Anyone with the link can view."** If that permission is ever changed, the app will fail to load data (it'll show a clear on-screen error rather than fail silently).
 
+### Sign-in & Favorites (Firebase)
+
+"Sign in with Google" and Favorites are powered by [Firebase](https://console.firebase.google.com) (project: `zion-psalms`), using:
+
+- **Authentication** — Google sign-in via a popup (Firebase Auth).
+- **Cloud Firestore** — one document per signed-in user, in the `favorites` collection, keyed by that user's Firebase UID. Each document has a single `trackUris` array field holding the Spotify Track URIs they've favorited.
+
+The Firebase project config (API key, project ID, etc.) is hardcoded near the top of the main `<script>` block in `index.html`. This is normal for Firebase's client-side SDK — that config isn't a secret, access is actually controlled by Firestore's security rules and the authorized-domains list below — so there's no need to hide or rotate it.
+
+**Important:** sign-in only works from domains listed in Firebase Console → **Authentication → Settings → Authorized domains**. If this app is ever embedded on a new domain, or the GitHub Pages URL changes, add it there or "Sign in with Google" will silently fail (it also won't work from `localhost` unless you add that too, which is why testing sign-in locally needs its own authorized-domain entry).
+
 ### Expected columns
 
 The app expects these exact column headers in the sheet. If a column is renamed, the app won't be able to find it:
@@ -50,7 +62,7 @@ The app expects these exact column headers in the sheet. If a column is renamed,
 | `Album Image URL` | Card artwork |
 | `Track Duration (ms)` | Duration shown on card |
 | `Track Preview URL` | 30-second audio preview button |
-| `Track URI` | Links the track title to its Spotify page; also the storage key for a listener's personal note on that song |
+| `Track URI` | Links the track title to its Spotify page; also the key used to identify a song as a Favorite and in "Build Spotify Playlist" |
 | `Artist URI(s)` | Links each artist name to their Spotify page (comma-separated, paired positionally with `Artist Name(s)`) |
 | `Album URI` | Links the album name to its Spotify page |
 | `Psalm No` | Psalm badge, Psalm number search, the badge's hover preview of the passage, and the "Read Psalm" link in the ⋮ menu |
@@ -61,7 +73,7 @@ The app expects these exact column headers in the sheet. If a column is renamed,
 | `Chart` | "Charted songs only" toggle and the "Chart" tag (expects `TRUE` / `FALSE`) — an indicator only, doesn't need to point anywhere itself |
 | `Lyrics URL` | "Lyrics" link in the ⋮ menu (row omitted if blank) |
 | `Chord Chart URL` | "Chord chart" link in the ⋮ menu (row omitted if blank) |
-| `CCLI URL` | "CCLI info" link in the ⋮ menu (row omitted if blank) |
+| `CCLI URL` | "CCLI" badge on the card plus the "CCLI info" link in the ⋮ menu (both omitted if blank) |
 
 `Track URI`, `Artist URI(s)`, and `Album URI` are expected in Spotify's native format (e.g. `spotify:track:1cCjXaDbFq6kFQXOdu3KuT`) — this is what Spotify's own export tools (like Exportify) produce by default. If a row is missing one of these, that piece of text just displays as plain, non-clickable text rather than breaking anything.
 
@@ -72,7 +84,7 @@ Rows with an empty `Track Name` are skipped automatically, so blank rows in the 
 ## Making changes
 
 ### Editing content or data
-No code changes needed — just edit the Google Sheet. New rows, updated ratings, corrected typos, etc. all show up automatically the next time someone loads the page (or clicks the **"refresh data"** button in the top right of the app).
+No code changes needed — just edit the Google Sheet. New rows, updated ratings, corrected typos, etc. all show up automatically the next time someone loads the page (the app fetches fresh data from the sheet on every page load — there's no separate refresh button).
 
 ### Editing the app itself (design, filters, behavior)
 1. Go to the repo on GitHub and open `index.html`
@@ -102,7 +114,7 @@ const SHEET_GID = "518638622";
 Almost always a sharing-permissions issue. Open the Google Sheet → Share → confirm it's set to "Anyone with the link" → "Viewer."
 
 **Data looks outdated**
-Click the **"refresh data"** button in the app, or hard-refresh the browser page. The app doesn't cache data between visits, but browsers sometimes cache the page itself.
+Hard-refresh the browser page (Ctrl/Cmd+Shift+R). The app doesn't cache data between visits, but browsers sometimes cache the page itself.
 
 **A filter isn't working / a facet is empty**
 Check that the corresponding column header in the sheet exactly matches the names listed in [Expected columns](#expected-columns) above — even small differences (extra space, different capitalization) will break the match.
@@ -113,8 +125,11 @@ That row's URI column is either empty or not in Spotify's standard `spotify:trac
 **Changes to `index.html` aren't showing up live**
 Check the repo's **Actions** tab for a "pages build and deployment" run — it should show a green checkmark within a minute or two of your commit. If it's still not showing, try a hard refresh (Ctrl/Cmd+Shift+R).
 
-**"This browser won't let the page save notes here" when saving a note**
-Personal notes are stored in the visitor's browser via `localStorage`, keyed by that song's `Track URI`. Some browsers (notably Safari) block this inside a cross-origin iframe embed — which is how this app is normally embedded on singzion.com. Opening the live site directly in its own tab (not embedded) resolves it. Because notes are per-browser only, they also won't appear on a different device or browser, and clearing site data/cache will erase them.
+**"Sign in with Google" does nothing, or the popup fails**
+The current domain likely isn't in Firebase's authorized-domains list — see [Sign-in & Favorites (Firebase)](#sign-in--favorites-firebase) above. This is also expected when testing from `localhost` unless that's been added too. Popups blocked by the browser (common inside an iframe embed) will also cause a silent failure.
+
+**"Couldn't save that favorite" when clicking a heart**
+Usually a dropped connection, or a Firestore security-rules issue if this ever happens for every user rather than one flaky click. The heart updates immediately either way — if the save fails, it visually reverts a moment later rather than leaving the UI out of sync with what's actually stored.
 
 ---
 

@@ -959,6 +959,16 @@ var refTagger = {
 </div>
 </div>
 
+<div class="facet-block" id="favFacet" style="display:none">
+<div class="facet-body">
+<button class="fav-only-btn" id="favOnlyBtn" aria-pressed="false" disabled>
+  <span class="heart-icon" aria-hidden="true">♥</span>
+  My Favorites
+  <span class="fav-only-count" id="favOnlyCount"></span>
+</button>
+</div>
+</div>
+
 <div class="facet-block">
 <div class="facet-body">
 <button class="exclude-unrated-btn" id="chartToggleBtn" aria-pressed="false">Charted songs only</button>
@@ -968,15 +978,6 @@ var refTagger = {
 <div class="facet-block">
 <div class="facet-body">
 <button class="exclude-unrated-btn" id="excludeUnratedBtn" aria-pressed="false">Exclude unrated songs</button>
-</div>
-</div>
-
-<div class="facet-block" id="favFacet" style="display:none">
-<div class="facet-body">
-<button class="fav-only-btn" id="favOnlyBtn" aria-pressed="false" disabled>
-  <span class="heart-icon" aria-hidden="true">♥</span>
-  My Favorites
-</button>
 </div>
 </div>
 
@@ -1042,6 +1043,7 @@ auth.onAuthStateChanged(user => {
   }else{
     els.signInBtn.textContent = "Sign in with Google";
     favoriteUris = new Set();
+    updateFavOnlyCount();
     els.favFacet.style.display = "none";
     els.favOnlyBtn.disabled = true;
     els.favOnlyBtn.setAttribute('aria-pressed', 'false');
@@ -1060,6 +1062,7 @@ function loadFavorites(){
   db.collection('favorites').doc(currentUser.uid).get().then(doc => {
     const data = doc.exists ? doc.data() : {};
     favoriteUris = new Set(data.trackUris || []);
+    updateFavOnlyCount();
     renderGrid();
   }).catch(err => {
     console.error(err);
@@ -1081,6 +1084,7 @@ function toggleFavorite(uri, btn){
   const wasFav = favoriteUris.has(uri);
   if(wasFav) favoriteUris.delete(uri); else favoriteUris.add(uri);
   updateFavBtn(btn, !wasFav);
+  updateFavOnlyCount();
 
   const ref = db.collection('favorites').doc(currentUser.uid);
   const change = { trackUris: wasFav
@@ -1091,6 +1095,7 @@ function toggleFavorite(uri, btn){
     console.error(err);
     if(wasFav) favoriteUris.add(uri); else favoriteUris.delete(uri);
     updateFavBtn(btn, wasFav);
+    updateFavOnlyCount();
     alert("Couldn't save that favorite — check your connection and try again.");
   });
 }
@@ -1101,6 +1106,13 @@ function updateFavBtn(btn, isFav){
   btn.innerHTML = isFav ? HEART_FILLED_SVG : HEART_OUTLINE_SVG;
   btn.title = isFav ? "Remove from Favorites" : "Add to Favorites";
   btn.setAttribute('aria-pressed', String(isFav));
+}
+
+// Real-time (#) count on the "My Favorites" toggle itself, separate from the
+// filtered count shown in the action bar once that toggle is switched on.
+function updateFavOnlyCount(){
+  if(!els.favOnlyCount) return;
+  els.favOnlyCount.textContent = `(${favoriteUris.size})`;
 }
 
 // "Rate this song" button -> opens the Fillout evaluation form (embedded at
@@ -1120,6 +1132,12 @@ const FORM_TRACK_ARTIST_PARAM = "trackartist";
 const PAGE_SIZE = 48;
 let allRows = [];
 let filteredRows = [];
+// False until the sheet's first successful fetch. Firebase's auth-state check
+// fires almost immediately on page load (even for signed-out visitors) and
+// triggers a renderGrid() of its own — often before the Sheets fetch has
+// finished — so without this flag that first render shows the "No songs
+// match these filters" empty state instead of a loading message.
+let dataLoaded = false;
 let visibleCount = PAGE_SIZE;
 let currentAudio = null;
 let currentAudioBtn = null;
@@ -1153,6 +1171,7 @@ clearBtn: document.getElementById('clearBtn'),
 signInBtn: document.getElementById('signInBtn'),
 favFacet: document.getElementById('favFacet'),
 favOnlyBtn: document.getElementById('favOnlyBtn'),
+favOnlyCount: document.getElementById('favOnlyCount'),
 favActionBar: document.getElementById('favActionBar'),
 favCount: document.getElementById('favCount'),
 spotifyBuildBtn: document.getElementById('spotifyBuildBtn'),
@@ -1234,6 +1253,7 @@ return;
 try{
 const rows = gvizTableToRows(json.table);
 allRows = rows.filter(r => (r["Track Name"] || "").trim() !== "");
+dataLoaded = true;
 buildFacetOptions();
 applyFilters();
 }catch(e){
@@ -1395,11 +1415,14 @@ function renderGrid(){
 els.headerCount.textContent = filteredRows.length.toLocaleString() + " Songs";
 
 if(filteredRows.length===0){
-els.grid.innerHTML = `
+els.grid.innerHTML = dataLoaded ? `
 <div class="state-box">
 <h3>No songs match these filters</h3>
 <p>Try loosening a slider, unchecking "Exclude unrated songs," or clearing all filters.</p>
 <button onclick="document.getElementById('clearBtn').click()">Clear all filters</button>
+</div>` : `
+<div class="state-box">
+<h3>Loading Psalms…</h3>
 </div>`;
 els.loadMoreWrap.style.display = "none";
 return;
