@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Zion Psalms Explorer — v1.2 — 2026-07-25 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -99,24 +100,8 @@ color: var(--text-light);
 display: block;
 font-family: var(--font-display);
 font-weight: 600;
+margin-bottom: 8px;
 }
-.refresh-btn{
-margin-top: 8px;
-background: none;
-border: 1px solid var(--ink-3);
-color: var(--text-muted);
-font-family: var(--font-mono);
-font-size: 11px;
-letter-spacing: 0.05em;
-padding: 6px 12px;
-border-radius: var(--radius);
-cursor: pointer;
-transition: all 0.15s ease;
-}
-.refresh-btn:hover{ border-color: var(--gold); color: var(--gold); }
-.refresh-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
-.refresh-btn.spinning{ opacity: 0.5; pointer-events: none; }
-
 /* ---------- Layout ---------- */
 .layout{
 max-width: 1280px;
@@ -142,6 +127,7 @@ main::-webkit-scrollbar-thumb{ background: var(--ink-3); border-radius: 3px; }
 display: flex;
 flex-direction: column;
 gap: 22px;
+padding-bottom: 24px;
 }
 @media (min-width: 861px){
 .facets{
@@ -186,7 +172,7 @@ color: var(--text-light);
 font-family: var(--font-mono);
 font-size: 11px;
 font-style: italic;
-padding: 7px 7px;
+padding: 7px 11px;
 border-radius: var(--radius);
 }
 input[type="text"]:focus, input[type="number"]:focus{
@@ -376,16 +362,6 @@ text-align: left;
 .clear-btn:hover{ text-decoration: underline; }
 
 /* ---------- Results ---------- */
-.results-bar{
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 18px;
-font-family: var(--font-mono);
-font-size: 12px;
-color: var(--text-muted);
-}
-
 .sort-control{
 display: flex;
 align-items: center;
@@ -431,6 +407,7 @@ border-color: var(--gold-dim);
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 gap: 18px;
+margin-top: 18px;
 }
 
 .card{
@@ -482,8 +459,98 @@ box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 .psalm-badge .lbl{
 font-size: 6px;
 letter-spacing: 0.08em;
+text-transform: uppercase;
 color: var(--text-muted);
 margin-bottom: 1px;
+}
+.psalm-badge a{ color: inherit !important; text-decoration: none !important; }
+.psalm-badge .psalm-hover-ref{
+position: absolute;
+inset: 0;
+clip-path: circle(50%);
+color: transparent;
+user-select: none;
+}
+.psalm-badge .psalm-hover-ref a.rtBibleRef{
+display: block;
+width: 100%;
+height: 100%;
+color: transparent !important;
+text-decoration: none !important;
+}
+
+/* ---------- v1.1: card action panel ---------- */
+.more-btn{
+  position: absolute;
+  top: 9px; right: 9px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(28,35,51,0.85);
+  border: 1.5px solid var(--gold-dim);
+  color: var(--gold);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.more-btn:hover{ background: var(--ink); transform: scale(1.08); }
+.more-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.more-btn svg{ width: 15px; height: 15px; pointer-events: none; }
+
+.card-panel{
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  display: none;
+  flex-direction: column;
+  padding: 6px 10px 9px;
+  z-index: 2;
+}
+.card.flipped .card-panel{ display: flex; }
+/* Only the overlays sitting on the artwork hide when the panel opens. The
+   Chart badge now lives in the tag row, below the panel, so it stays put. */
+.card.flipped .psalm-badge,
+.card.flipped .play-btn{ opacity: 0; pointer-events: none; }
+
+/* Rows flex to fill whatever height the artwork gives us: compact on desktop,
+   comfortably tappable on mobile, with no scrolling inside the card. */
+.panel-list{
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* keep the first label from colliding with the close button */
+.panel-list .panel-row:first-child{ padding-right: 30px; }
+.panel-row{
+  flex: 1 1 0;
+  min-height: 24px;
+  display: flex; align-items: center; gap: 6px;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(50,60,88,0.55);
+  padding: 0 2px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.12s ease, padding-left 0.12s ease;
+}
+.panel-list .panel-row:last-child{ border-bottom: none; }
+.panel-row:hover{ color: var(--gold); padding-left: 6px; }
+.panel-row:focus-visible{ outline: 2px solid var(--gold); outline-offset: -2px; }
+.panel-row .ext{ margin-left: auto; color: var(--gold-dim); font-size: 10px; }
+
+@media (prefers-reduced-motion: reduce){
+  .panel-row, .more-btn, .card{ transition: none; }
 }
 
 .play-btn{
@@ -505,24 +572,58 @@ transition: transform 0.1s ease;
 .play-btn:disabled{ background: var(--parchment-2); color: var(--text-muted); cursor: not-allowed; }
 .play-btn svg{ width: 14px; height: 14px; }
 
+/* Chart is a presence indicator, not a link — the chord chart itself opens
+   from the reverse side. Version 2.0 puts the favorites heart in this strip. */
 .chart-badge{
-position: absolute;
-bottom: 9px; left: 9px;
 font-family: var(--font-mono);
 font-size: 9.5px;
 font-weight: 600;
 letter-spacing: 0.04em;
 text-transform: uppercase;
-padding: 4px 8px;
+padding: 3px 7px;
 border-radius: 2px;
-background: var(--danger);
-color: var(--text-light);
-text-decoration: none;
-box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+background: rgba(176,58,58,0.16);
+color: var(--danger);
+border: 1px solid rgba(176,58,58,0.4);
 cursor: default;
 }
-a.chart-badge{ cursor: pointer; }
-a.chart-badge:hover{ filter: brightness(1.1); text-decoration: underline; }
+
+/* CCLI is also a presence indicator only — the actual SongSelect link lives
+   in the ⋮ panel, same pattern as Chart above. */
+.ccli-badge{
+font-family: var(--font-mono);
+font-size: 9.5px;
+font-weight: 600;
+letter-spacing: 0.04em;
+text-transform: uppercase;
+padding: 3px 7px;
+border-radius: 2px;
+background: rgba(58,110,176,0.16);
+color: #6FA8DC;
+border: 1px solid rgba(58,110,176,0.4);
+cursor: default;
+}
+
+/* Favorites heart — the one badge in this strip that's actually clickable. */
+.fav-badge{
+display: inline-flex;
+align-items: center;
+padding: 3px 6px;
+border-radius: 2px;
+background: transparent;
+color: var(--text-muted);
+border: 1px solid var(--ink-3);
+cursor: pointer;
+transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.fav-badge svg{ width: 11px; height: 11px; pointer-events: none; }
+.fav-badge:hover{ color: var(--gold); border-color: var(--gold-dim); }
+.fav-badge:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.fav-badge.is-fav{
+background: rgba(199,154,63,0.16);
+color: var(--gold);
+border-color: rgba(199,154,63,0.4);
+}
 
 .rate-btn{
   display: block;
@@ -591,14 +692,23 @@ padding-top: 8px;
 .tag{
 font-family: var(--font-mono);
 font-size: 9.5px;
-letter-spacing: 0.03em;
+letter-spacing: 0.02em;
 padding: 3px 7px;
 border-radius: 2px;
 background: rgba(74,107,94,0.12);
 color: var(--pine-dim);
 border: 1px solid rgba(74,107,94,0.25);
 }
-.tag.mood{ background: rgba(199,154,63,0.15); color: var(--gold-dim); border-color: rgba(199,154,63,0.3); }
+.tag.mood{
+background: rgba(199,154,63,0.15);
+color: var(--gold-dim);
+border-color: rgba(199,154,63,0.3);
+}
+.tag.textvar{
+background: #174d9426;
+color: var(--pine-dim);
+border-color: #1c41e94d;
+}
 
 /* ---------- States ---------- */
 .state-box{
@@ -648,25 +758,53 @@ transition: all 0.15s ease;
 *{ transition: none !important; animation: none !important; }
 }
 
-.spin{
-animation: spin 0.9s linear infinite;
-display: inline-block;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
+<!-- RefTagger: turns Bible references (e.g. "Psalm 23") found in the page text into
+hoverable tooltips showing the verse. It only scans once on load, before any song
+cards exist, so tagPsalmRefs() below re-triggers it after every dynamic grid render. -->
+<script>
+var refTagger = {
+  settings: {
+    bibleVersion: 'ESV',
+    bibleReader: 'app.logos'
+  }
+};
+
+(function(d, t) {
+  var n=d.querySelector('[nonce]');
+  refTagger.settings.nonce = n && (n.nonce||n.getAttribute('nonce'));
+  var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
+  g.src = 'https://api.reftagger.com/v2/RefTagger.js';
+  g.nonce = refTagger.settings.nonce;
+  s.parentNode.insertBefore(g, s);
+}(document, 'script'));
+</script>
+
 <header class="top">
 <div class="top-inner">
 <div>
-<h1>Zion Psalter Catalog</h1>
+<h1>Zion Psalms Explorer</h1>
 <p class="subtitle">LIVING PSALTER - songs drawn from the Book of Psalms composed for today's worship, indexed, crowd-source ranked, and filterable.</p>
 </div>
 <div class="header-meta">
 <span class="count" id="headerCount">—</span>
-<span id="lastUpdated">loading…</span><br>
-<button class="refresh-btn" id="refreshBtn">↻ refresh data</button>
+<label class="sort-control">
+<span class="sort-label">Sort by</span>
+<select id="sortSelect">
+<option value="psalm-asc">Psalm # Ascending</option>
+<option value="psalm-desc">Psalm # Descending</option>
+<option value="artist-asc">Artist A–Z</option>
+<option value="artist-desc">Artist Z–A</option>
+<option value="date-new">Release Date New–Old</option>
+<option value="date-old">Release Date Old–New</option>
+<option value="length-asc">Track Length Ascending</option>
+<option value="length-desc">Track Length Descending</option>
+</select>
+</label>
+<button type="button" class="clear-btn" id="signInBtn">Sign in with Google</button>
 </div>
 </div>
 </header>
@@ -693,7 +831,7 @@ display: inline-block;
 </div>
 
 <div class="facet-block" id="moodBlock">
-<p class="facet-title"><span>Mood</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="Helpful in situating an arrangement within the emotional character of your liturgy.">Mood</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -710,7 +848,7 @@ display: inline-block;
 </div>
 
 <div class="facet-block" id="congBlock">
-<p class="facet-title"><span>Congregational</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="Some songs are encouraging to listen to, others are easy to pick up and sing together.">Congregational</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -719,15 +857,15 @@ display: inline-block;
 <input type="range" min="0" max="10" step="1" value="10" class="dual-range" id="congMax">
 </div>
 <div class="dual-slider-labels">
-<span>Difficult, Irregular</span>
-<span>Easy, Recurrent</span>
+<span>Listenable</span>
+<span>Singable</span>
 </div>
 </div>
 </div>
 </div>
 
 <div class="facet-block" id="textVarBlock">
-<p class="facet-title"><span>Textual Variance</span><span class="chev">▾</span></p>
+<p class="facet-title"><span title="The spectrum from truncated or interpreted, to word-for-word from an English translation.">Textual Variance</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="dual-slider">
 <div class="dual-slider-track">
@@ -763,22 +901,6 @@ display: inline-block;
 </aside>
 
 <main>
-<div class="results-bar">
-<span id="resultsCount">Loading…</span>
-<label class="sort-control">
-<span class="sort-label">Sort by</span>
-<select id="sortSelect">
-<option value="psalm-asc">Psalm # Ascending</option>
-<option value="psalm-desc">Psalm # Descending</option>
-<option value="artist-asc">Artist A–Z</option>
-<option value="artist-desc">Artist Z–A</option>
-<option value="date-new">Release Date New–Old</option>
-<option value="date-old">Release Date Old–New</option>
-<option value="length-asc">Track Length Ascending</option>
-<option value="length-desc">Track Length Descending</option>
-</select>
-</label>
-</div>
 <div class="grid" id="grid"></div>
 <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
 <button class="load-more" id="loadMoreBtn">Show more songs</button>
@@ -786,20 +908,108 @@ display: inline-block;
 </main>
 </div>
 
+<!-- Firebase: powers "Sign in with Google" and stores each user's Favorites -->
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+
 <script>
 const SPREADSHEET_ID = "1qoApr0hgfl-ts6G8eu9drre69h96zShdOHTVQlwDhuo";
 const SHEET_GID = "518638622";
 const GVIZ_BASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${SHEET_GID}&headers=1`;
 
-// "Rate this song" button -> opens the Zion Psalter — Song Evaluation Google Form
-// with the Track & Artist question pre-filled, so the person doesn't have to
-// find the song again inside the form. If the form is ever recreated, update
-// FORM_BASE_URL (chain-link icon in the Form editor toolbar) and
-// FORM_TRACK_ARTIST_ENTRY (Form editor's ⋮ menu > "Pre-fill form", fill in a
-// sample value, click "Get link", then read the entry.NNNNNNN number out of
-// the copied URL).
-const FORM_BASE_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfWFHV3GzHIU0mLruD83VaV0mK-sNE2sF6hfw3JQYheihx4Dw/viewform";
-const FORM_TRACK_ARTIST_ENTRY = "entry.1253262295";
+// ---------- Firebase: Google sign-in + Favorites storage ----------
+// Paste the 6 values from your Firebase "web app" config (Step 2) below.
+const firebaseConfig = {
+  apiKey: "AIzaSyCHygPYVvEiCsLAanox15dux-2604Lizek",
+  authDomain: "zion-psalms.firebaseapp.com",
+  projectId: "zion-psalms",
+  storageBucket: "zion-psalms.firebasestorage.app",
+  messagingSenderId: "722800414474",
+  appId: "1:722800414474:web:d9eda94d5021828e1d74f3"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+let currentUser = null;
+// Track URIs the signed-in user has favorited. Empty until they sign in
+// and loadFavorites() finishes reading their Firestore document.
+let favoriteUris = new Set();
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if(user){
+    els.signInBtn.textContent = "Sign out (" + (user.displayName || user.email) + ")";
+    loadFavorites();
+  }else{
+    els.signInBtn.textContent = "Sign in with Google";
+    favoriteUris = new Set();
+    renderGrid();
+  }
+});
+
+// Reads the signed-in user's favorites document (one per user, keyed by
+// their Google account ID) and re-renders so hearts reflect the real state.
+function loadFavorites(){
+  if(!currentUser) return;
+  db.collection('favorites').doc(currentUser.uid).get().then(doc => {
+    const data = doc.exists ? doc.data() : {};
+    favoriteUris = new Set(data.trackUris || []);
+    renderGrid();
+  }).catch(err => {
+    console.error(err);
+    alert("Couldn't load your favorites right now. Try refreshing the page.");
+  });
+}
+
+// Adds/removes one Track URI from Firestore, with an immediate UI update
+// (so it feels instant) that's rolled back if the save fails.
+function toggleFavorite(uri, btn){
+  if(!uri) return;
+  if(!currentUser){
+    auth.signInWithPopup(googleProvider).catch(err => console.error(err));
+    return;
+  }
+  const wasFav = favoriteUris.has(uri);
+  if(wasFav) favoriteUris.delete(uri); else favoriteUris.add(uri);
+  updateFavBtn(btn, !wasFav);
+
+  const ref = db.collection('favorites').doc(currentUser.uid);
+  const change = { trackUris: wasFav
+    ? firebase.firestore.FieldValue.arrayRemove(uri)
+    : firebase.firestore.FieldValue.arrayUnion(uri)
+  };
+  ref.set(change, { merge: true }).catch(err => {
+    console.error(err);
+    if(wasFav) favoriteUris.add(uri); else favoriteUris.delete(uri);
+    updateFavBtn(btn, wasFav);
+    alert("Couldn't save that favorite — check your connection and try again.");
+  });
+}
+
+function updateFavBtn(btn, isFav){
+  if(!btn) return;
+  btn.classList.toggle('is-fav', isFav);
+  btn.innerHTML = isFav ? HEART_FILLED_SVG : HEART_OUTLINE_SVG;
+  btn.title = isFav ? "Remove from Favorites" : "Add to Favorites";
+  btn.setAttribute('aria-pressed', String(isFav));
+}
+
+// "Rate this song" button -> opens the Fillout evaluation form (embedded at
+// singzion.com/evaluate) with the "Title and Artist of Song You're Evaluating"
+// short-answer field pre-filled via the "trackartist" URL parameter, so the
+// person doesn't have to find the song again inside the form. If the Fillout
+// form URL or parameter name ever change, update these two constants (Fillout
+// editor > Share tab for the URL; Edit tab > click the field > "Pre-fill"
+// settings for the parameter name).
+//
+// NOTE: as of this build, the "trackartist" parameter and the plain short-answer
+// field are set up in Fillout but the form has NOT been published yet — the
+// live form still shows the old dropdown. Publish it in Fillout when ready.
+const FORM_BASE_URL = "https://psalmeval.fillout.com/t/nqavKiYQxWus";
+const FORM_TRACK_ARTIST_PARAM = "trackartist";
 
 const PAGE_SIZE = 48;
 let allRows = [];
@@ -822,13 +1032,10 @@ sortBy: "psalm-asc"
 
 const els = {
 grid: document.getElementById('grid'),
-resultsCount: document.getElementById('resultsCount'),
 headerCount: document.getElementById('headerCount'),
-lastUpdated: document.getElementById('lastUpdated'),
 sourceNote: document.getElementById('sourceNote'),
 loadMoreWrap: document.getElementById('loadMoreWrap'),
 loadMoreBtn: document.getElementById('loadMoreBtn'),
-refreshBtn: document.getElementById('refreshBtn'),
 searchInput: document.getElementById('searchInput'),
 psalmInput: document.getElementById('psalmInput'),
 genreList: document.getElementById('genreList'),
@@ -836,6 +1043,7 @@ chartToggleBtn: document.getElementById('chartToggleBtn'),
 excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
 sortSelect: document.getElementById('sortSelect'),
 clearBtn: document.getElementById('clearBtn'),
+signInBtn: document.getElementById('signInBtn'),
 };
 
 function fmtDuration(ms){
@@ -890,9 +1098,7 @@ return obj;
 let jsonpTimeoutHandle = null;
 
 function loadData(){
-els.refreshBtn.classList.add('spinning');
-els.refreshBtn.innerHTML = '<span class="spin">↻</span> loading…';
-els.resultsCount.textContent = "Loading songs…";
+els.headerCount.textContent = "Loading…";
 
 const cbName = "zpCallback_" + Date.now();
 const existingScript = document.getElementById('zpJsonpScript');
@@ -907,8 +1113,6 @@ if(s) s.remove();
 
 window[cbName] = function(json){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 
 if(!json || json.status === "error"){
 const msg = (json && json.errors && json.errors[0] && json.errors[0].detailed_message) || "Unknown error from Google Sheets.";
@@ -920,8 +1124,6 @@ const rows = gvizTableToRows(json.table);
 allRows = rows.filter(r => (r["Track Name"] || "").trim() !== "");
 buildFacetOptions();
 applyFilters();
-els.headerCount.textContent = allRows.length.toLocaleString();
-els.lastUpdated.textContent = "as of " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }catch(e){
 console.error(e);
 showLoadError("The sheet responded, but the data couldn't be read. " + e.message);
@@ -931,8 +1133,6 @@ showLoadError("The sheet responded, but the data couldn't be read. " + e.message
 jsonpTimeoutHandle = setTimeout(() => {
 if(window[cbName]){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 showLoadError("Timed out waiting on Google Sheets. The sheet may not be shared as \"Anyone with the link can view,\" or the gid/sheet may have changed.");
 }
 }, 10000);
@@ -943,8 +1143,6 @@ script.src = GVIZ_BASE + "&tqx=out:json;responseHandler:" + cbName;
 script.onerror = function(){
 if(window[cbName]){
 cleanup();
-els.refreshBtn.classList.remove('spinning');
-els.refreshBtn.innerHTML = '↻ refresh data';
 showLoadError("Couldn't reach Google Sheets. Check the sheet is shared as \"Anyone with the link can view.\"");
 }
 };
@@ -958,7 +1156,7 @@ els.grid.innerHTML = `
 <p>${escapeHTML(detail)}</p>
 <button onclick="loadData()">Try again</button>
 </div>`;
-els.resultsCount.textContent = "";
+els.headerCount.textContent = "";
 }
 
 function buildFacetOptions(){
@@ -1073,7 +1271,7 @@ return num >= min && num <= max;
 }
 
 function renderGrid(){
-els.resultsCount.textContent = filteredRows.length.toLocaleString() + " song" + (filteredRows.length===1?"":"s");
+els.headerCount.textContent = filteredRows.length.toLocaleString() + " Songs";
 
 if(filteredRows.length===0){
 els.grid.innerHTML = `
@@ -1094,6 +1292,39 @@ btn.addEventListener('click', onPlayClick);
 });
 
 els.loadMoreWrap.style.display = (filteredRows.length > visibleCount) ? "flex" : "none";
+tagPsalmRefs();
+}
+
+// RefTagger only auto-scans once, on load. Since cards are rendered dynamically (and
+// re-rendered on every filter/sort/search change), each render asks it to re-scan just
+// the grid (passing it as the root node — RefTagger doesn't keep settings.rootNode
+// around after init, it wants the node passed straight into tag()). If RefTagger.js
+// hasn't finished loading yet (race with the sheet fetch), retry a few times rather
+// than silently giving up.
+let refTaggerRetries = 0;
+function tagPsalmRefs(){
+if(window.refTagger && typeof refTagger.tag === "function"){
+refTagger.tag(els.grid);
+fixPsalmRefLinks();
+refTaggerRetries = 0;
+}else if(refTaggerRetries < 15){
+refTaggerRetries++;
+setTimeout(tagPsalmRefs, 400);
+}
+}
+
+// RefTagger's own auto-generated href is built from the padded "1-200" reference
+// above, which ref.ly cannot resolve (an out-of-range verse either 404s or, worse,
+// spills over into the following psalms' verses). RefTagger's tooltip preview reads
+// data-reference/data-version at hover time (not href) and already clamps that padded
+// range correctly, so it's left untouched — only the click-through href is replaced
+// with a plain whole-chapter reference (no verse number at all, which ref.ly resolves
+// reliably), routed through the Logos reader set in refTagger.settings.bibleReader.
+function fixPsalmRefLinks(){
+els.grid.querySelectorAll('.psalm-hover-ref[data-psalm]').forEach(wrap=>{
+const a = wrap.querySelector('a.rtBibleRef');
+if(a) a.href = `https://ref.ly/${encodeURIComponent('Ps ' + wrap.dataset.psalm)};esv?t=app.logos`;
+});
 }
 
 function cardHTML(r){
@@ -1111,16 +1342,13 @@ const tags = [];
 genres.forEach(g => tags.push(`<span class="tag">${escapeHTML(g)}</span>`));
 if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
 if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
-if(textVar) tags.push(`<span class="tag">var. ${escapeHTML(textVar)}</span>`);
+if(textVar) tags.push(`<span class="tag textvar">text var. ${escapeHTML(textVar)}</span>`);
 
-// "Chart" badge overlays the artwork instead of taking up tag-row space.
-// Not yet a live link: once a "Chart URL" column is added to the sheet, this
-// automatically becomes a clickable link to it — no code changes needed.
-const chartUrl = (r["Chart URL"]||"").trim();
+// "Chart" (column V) is a yes/no flag meaning a chord chart exists for this
+// song. It's an indicator only — the actual link lives on the card's reverse
+// side, sourced from "Chord Chart URL" (column W).
 const chartBadgeHTML = isChart
-? (chartUrl
-? `<a class="chart-badge" href="${escapeHTML(chartUrl)}" target="_blank" rel="noopener" title="View chart">Chart</a>`
-: `<span class="chart-badge" title="Charted — link coming soon">Chart</span>`)
+? `<span class="chart-badge" title="Download Chord Chart in ⋮ Menu">Chart</span>`
 : "";
 
 // Track name -> Spotify track link
@@ -1128,6 +1356,15 @@ const trackUrl = spotifyUrl(r["Track URI"]);
 const trackNameHTML = trackUrl
 ? `<a href="${trackUrl}" target="_blank" rel="noopener">${escapeHTML(r["Track Name"]||"")}</a>`
 : escapeHTML(r["Track Name"]||"");
+
+// Favorites heart. Keyed by Track URI (same stable key used for Spotify links
+// above), matched against the signed-in user's favoriteUris Set. Hidden
+// entirely for rows with no Track URI, since there'd be nothing to match on.
+const favUri = (r["Track URI"]||"").trim();
+const isFav = favUri && favoriteUris.has(favUri);
+const favBadgeHTML = favUri
+? `<button type="button" class="fav-badge${isFav ? ' is-fav' : ''}" data-uri="${escapeHTML(favUri)}" title="${isFav ? 'Remove from Favorites' : 'Add to Favorites'}" aria-pressed="${isFav}">${isFav ? HEART_FILLED_SVG : HEART_OUTLINE_SVG}</button>`
+: "";
 
 // Artist name(s) -> individual Spotify artist links, positionally paired with Artist URI(s)
 const artistNames = splitMulti(r["Artist Name(s)"]);
@@ -1148,27 +1385,113 @@ const albumNameHTML = albumUrl
 // "Rate this song" -> pre-filled link into the evaluation Google Form.
 // Matches the "Track || Artist" convention used elsewhere in the catalog.
 const trackArtist = `${(r["Track Name"]||"").trim()} || ${(r["Artist Name(s)"]||"").trim()}`;
-const rateUrl = `${FORM_BASE_URL}?usp=pp_url&${FORM_TRACK_ARTIST_ENTRY}=${encodeURIComponent(trackArtist)}`;
+const rateUrl = `${FORM_BASE_URL}?${FORM_TRACK_ARTIST_PARAM}=${encodeURIComponent(trackArtist)}`;
 
+// Optional link columns. Each row is omitted entirely when its cell is empty —
+// a missing link is better than a dead one.
+const lyricsUrl = (r["Lyrics URL"]||"").trim();
+const chordsUrl = (r["Chord Chart URL"]||"").trim();
+const ccliUrl   = (r["CCLI URL"]||"").trim();
+
+// CCLI badge is a presence indicator, same pattern as the Chart badge above —
+// the actual SongSelect link lives in the ⋮ panel ("CCLI info" row).
+const ccliBadgeHTML = ccliUrl
+? `<span class="ccli-badge" title="Click ⋮ to view in CCLI SongSelect">CCLI</span>`
+: "";
+
+function extRow(label, href, title){
+  if(!href) return "";
+  return `<a class="panel-row" href="${escapeHTML(href)}" target="_blank" rel="noopener"${title?` title="${escapeHTML(title)}"`:""}>${label}<span class="ext" aria-hidden="true">&#8599;</span></a>`;
+}
+
+const panelRows = [
+  psalm ? extRow(`Read Psalm ${escapeHTML(psalm)}`, `https://www.esv.org/Psalm+${encodeURIComponent(psalm)}/`) : "",
+  extRow("Lyrics", lyricsUrl),
+  extRow("Chord chart", chordsUrl),
+  extRow("CCLI info", ccliUrl),
+  extRow("Rate this song", rateUrl),
+].join("");
+
+const panelHTML = `
+<div class="card-panel">
+  <div class="panel-list">${panelRows}</div>
+</div>`;
+
+// RefTagger only tags references with a verse number, never a bare chapter like
+// "Psalm 23" — and the sheet has no per-song verse data. ".psalm-hover-ref" is an
+// invisible span carrying "Psalm N:1-200"; RefTagger tags it (its ref.ly/Biblia
+// backend clamps the oversized end verse to whatever the chapter actually has), and
+// CSS below stretches the resulting link to cover the whole circular badge so hovering
+// anywhere on it shows the real full-psalm preview tooltip.
 return `
 <div class="card">
 <div class="art-wrap">
 ${img ? `<img src="${img}" loading="lazy" alt="">` : ""}
-${psalm ? `<div class="psalm-badge"><span class="lbl">PSALM</span>${psalm}</div>` : ""}
+${psalm ? `<div class="psalm-badge"><span class="lbl">Psalm</span> ${psalm}<span class="psalm-hover-ref" data-psalm="${escapeHTML(psalm)}" aria-hidden="true">Psalm ${psalm}:1-200</span></div>` : ""}
 ${chartBadgeHTML}
+${ccliBadgeHTML}
 <button class="play-btn" data-src="${preview}" ${preview? "" : "disabled"} title="${preview? "Play 30s preview" : "No preview available"}">
 <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"></polygon></svg>
 </button>
+<button type="button" class="more-btn" aria-label="More options for this song" aria-expanded="false" title="More options">
+<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
+</button>
+${panelHTML}
 </div>
 <div class="card-body">
 <div class="track-name">${trackNameHTML}</div>
 <div class="artist-name">${artistNameHTML}</div>
 <div class="album-line">${albumNameHTML}${year? " · "+year : ""}${r["Track Duration (ms)"]? " · "+fmtDuration(r["Track Duration (ms)"]) : ""}</div>
-<div class="tag-row">${tags.join("")}</div>
-<a class="rate-btn" href="${rateUrl}" target="_blank" rel="noopener">Rate this song</a>
+<div class="tag-row">${favBadgeHTML}${chartBadgeHTML}${ccliBadgeHTML}${tags.join("")}</div>
 </div>
 </div>`;
 }
+
+/* ---------- v1.1: card action panel ---------- */
+const DOTS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
+const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+const HEART_OUTLINE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.8 1.2 6 3.6C14.2 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z"/></svg>';
+const HEART_FILLED_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.8 1.2 6 3.6C14.2 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z"/></svg>';
+
+function panelClose(card){
+  if(!card) return;
+  card.classList.remove('flipped');
+  const btn = card.querySelector('.more-btn');
+  if(btn){ btn.innerHTML = DOTS_SVG; btn.setAttribute('aria-expanded', 'false'); btn.title = "More options"; }
+}
+function closeAllPanels(except){
+  els.grid.querySelectorAll('.card.flipped').forEach(c=>{ if(c !== except) panelClose(c); });
+}
+function panelOpen(card){
+  closeAllPanels(card);
+  card.classList.add('flipped');
+  const btn = card.querySelector('.more-btn');
+  btn.innerHTML = CLOSE_SVG;
+  btn.setAttribute('aria-expanded', 'true');
+  btn.title = "Close";
+}
+
+// One delegated listener survives every re-render of the grid.
+els.grid.addEventListener('click', e=>{
+  const card = e.target.closest('.card');
+  if(!card) return;
+
+  if(e.target.closest('.more-btn')){
+    card.classList.contains('flipped') ? panelClose(card) : panelOpen(card);
+    return;
+  }
+  const favBtn = e.target.closest('.fav-badge');
+  if(favBtn){
+    toggleFavorite(favBtn.getAttribute('data-uri'), favBtn);
+    return;
+  }
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.key !== "Escape") return;
+  const flipped = els.grid.querySelector('.card.flipped');
+  if(flipped) panelClose(flipped);
+});
 
 function escapeHTML(str){
 return String(str).replace(/[&<>"']/g, s => ({
@@ -1261,7 +1584,6 @@ visibleCount = PAGE_SIZE;
 applyFilters();
 });
 els.loadMoreBtn.addEventListener('click', ()=>{ visibleCount += PAGE_SIZE; renderGrid(); });
-els.refreshBtn.addEventListener('click', loadData);
 els.clearBtn.addEventListener('click', ()=>{
 state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=false;
 state.genres.clear();
@@ -1272,6 +1594,14 @@ document.querySelectorAll('.check-list input[type="checkbox"]').forEach(cb=>cb.c
 sliderResets.forEach(fn=>fn());
 visibleCount = PAGE_SIZE;
 applyFilters();
+});
+
+els.signInBtn.addEventListener('click', () => {
+  if(currentUser){ auth.signOut(); return; }
+  auth.signInWithPopup(googleProvider).catch(err => {
+    console.error(err);
+    alert("Sign-in didn't go through. Try opening the Explorer in its own tab and signing in there.");
+  });
 });
 
 loadData();
