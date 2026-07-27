@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Zion Psalms Explorer — v1.2 — 2026-07-25 -->
+<!-- Zion Psalms Explorer — v2.0 — 2026-07-26 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -93,6 +93,11 @@ text-align: right;
 font-family: var(--font-mono);
 font-size: 12px;
 color: var(--text-muted);
+}
+#signInBtn{
+display: block;
+margin-left: auto;
+margin-bottom: 10px;
 }
 .header-meta .count{
 font-size: 26px;
@@ -479,7 +484,72 @@ color: transparent !important;
 text-decoration: none !important;
 }
 
-/* ---------- v1.1: card action panel ---------- */
+/* ---------- v2.0: My Favorites toggle + action bar ---------- */
+.fav-only-btn{
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--gold-dim);
+  background: transparent;
+  color: var(--gold-dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.fav-only-btn[aria-pressed="true"]{
+  background: rgba(212,175,55,0.14);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.fav-only-btn:hover{ border-color: var(--gold); color: var(--gold); }
+.fav-only-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.fav-only-btn:disabled{
+  opacity: 0.35; cursor: not-allowed;
+  border-color: var(--ink-3); color: var(--text-muted);
+}
+.fav-only-btn .heart-icon{ font-size: 12px; }
+
+/* Slim contextual bar that appears above the grid when My Favorites is on */
+.fav-action-bar{
+  display: none;
+  align-items: center; justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  border-radius: var(--radius);
+  background: rgba(212,175,55,0.07);
+  border: 1px solid rgba(212,175,55,0.22);
+}
+.fav-action-bar.visible{ display: flex; }
+.fav-action-bar .fav-count{
+  font-family: var(--font-mono);
+  font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.spotify-build-btn{
+  font-family: var(--font-mono);
+  font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 7px 13px;
+  border-radius: var(--radius);
+  background: #1DB954;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.spotify-build-btn:hover{ filter: brightness(1.12); }
+.spotify-build-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.spotify-build-btn:disabled{ opacity: 0.45; cursor: not-allowed; filter: none; }
+.spotify-build-btn svg{ width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ---------- v1.1: card action panel, notes, dim overlay ---------- */
 .more-btn{
   position: absolute;
   top: 9px; right: 9px;
@@ -661,6 +731,14 @@ font-weight: 600;
 font-size: 15.5px;
 line-height: 1.25;
 }
+.track-title-row{
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 8px;
+}
+.track-title-row .track-name{ flex: 1 1 auto; min-width: 0; }
+.track-title-row .fav-badge{ flex: 0 0 auto; margin-top: 1px; }
 .artist-name{
 font-size: 12.5px;
 color: var(--pine-dim);
@@ -790,6 +868,7 @@ var refTagger = {
 <p class="subtitle">LIVING PSALTER - songs drawn from the Book of Psalms composed for today's worship, indexed, crowd-source ranked, and filterable.</p>
 </div>
 <div class="header-meta">
+<button type="button" class="clear-btn" id="signInBtn">Sign in with Google</button>
 <span class="count" id="headerCount">—</span>
 <label class="sort-control">
 <span class="sort-label">Sort by</span>
@@ -804,7 +883,6 @@ var refTagger = {
 <option value="length-desc">Track Length Descending</option>
 </select>
 </label>
-<button type="button" class="clear-btn" id="signInBtn">Sign in with Google</button>
 </div>
 </div>
 </header>
@@ -893,6 +971,15 @@ var refTagger = {
 </div>
 </div>
 
+<div class="facet-block" id="favFacet" style="display:none">
+<div class="facet-body">
+<button class="fav-only-btn" id="favOnlyBtn" aria-pressed="false" disabled>
+  <span class="heart-icon" aria-hidden="true">♥</span>
+  My Favorites
+</button>
+</div>
+</div>
+
 <div class="facet-block">
 <div class="facet-body">
 <button class="clear-btn" id="clearBtn">✕ clear all filters</button>
@@ -901,6 +988,13 @@ var refTagger = {
 </aside>
 
 <main>
+<div class="fav-action-bar" id="favActionBar">
+  <span class="fav-count" id="favCount"></span>
+  <button type="button" class="spotify-build-btn" id="spotifyBuildBtn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424a.623.623 0 0 1-.857.208c-2.348-1.435-5.304-1.76-8.785-.964a.623.623 0 1 1-.277-1.215c3.809-.87 7.077-.496 9.712 1.115a.623.623 0 0 1 .207.856zm1.223-2.722a.779.779 0 0 1-1.072.256c-2.687-1.652-6.785-2.131-9.965-1.166a.779.779 0 0 1-.973-.519.779.779 0 0 1 .519-.973c3.632-1.102 8.147-.568 11.235 1.33a.779.779 0 0 1 .256 1.072zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71a.935.935 0 1 1-.543-1.79c3.532-1.072 9.404-.865 13.115 1.338a.935.935 0 0 1-.955 1.609z"/></svg>
+    Build Spotify Playlist
+  </button>
+</div>
 <div class="grid" id="grid"></div>
 <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
 <button class="load-more" id="loadMoreBtn">Show more songs</button>
@@ -942,10 +1036,19 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   if(user){
     els.signInBtn.textContent = "Sign out (" + (user.displayName || user.email) + ")";
+    els.favFacet.style.display = "";
+    els.favOnlyBtn.disabled = false;
     loadFavorites();
   }else{
     els.signInBtn.textContent = "Sign in with Google";
     favoriteUris = new Set();
+    els.favFacet.style.display = "none";
+    els.favOnlyBtn.disabled = true;
+    els.favOnlyBtn.setAttribute('aria-pressed', 'false');
+    if(state.favoritesOnly){
+      state.favoritesOnly = false;
+      els.favActionBar.classList.remove('visible');
+    }
     renderGrid();
   }
 });
@@ -969,7 +1072,10 @@ function loadFavorites(){
 function toggleFavorite(uri, btn){
   if(!uri) return;
   if(!currentUser){
-    auth.signInWithPopup(googleProvider).catch(err => console.error(err));
+    auth.signInWithPopup(googleProvider).catch(err => {
+      console.error(err);
+      alert("Sign-in didn't go through. Try opening the Explorer in its own tab and signing in there.");
+    });
     return;
   }
   const wasFav = favoriteUris.has(uri);
@@ -1027,6 +1133,7 @@ congMin: 0, congMax: 10,
 textVarMin: 0, textVarMax: 10,
 excludeUnrated: false,
 chartOnly: false,
+favoritesOnly: false,
 sortBy: "psalm-asc"
 };
 
@@ -1044,6 +1151,11 @@ excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
 sortSelect: document.getElementById('sortSelect'),
 clearBtn: document.getElementById('clearBtn'),
 signInBtn: document.getElementById('signInBtn'),
+favFacet: document.getElementById('favFacet'),
+favOnlyBtn: document.getElementById('favOnlyBtn'),
+favActionBar: document.getElementById('favActionBar'),
+favCount: document.getElementById('favCount'),
+spotifyBuildBtn: document.getElementById('spotifyBuildBtn'),
 };
 
 function fmtDuration(ms){
@@ -1215,11 +1327,20 @@ if(!passesRange(r["Mood"], state.moodMin, state.moodMax, state.excludeUnrated)) 
 if(!passesRange(r["Congregational"], state.congMin, state.congMax, state.excludeUnrated)) return false;
 if(!passesRange(r["Textual Variance"], state.textVarMin, state.textVarMax, state.excludeUnrated)) return false;
 if(state.chartOnly && String(r["Chart"]||"").trim().toUpperCase() !== "TRUE") return false;
+const rowUri = (r["Track URI"]||"").trim();
+if(state.favoritesOnly && !favoriteUris.has(rowUri)) return false;
 
 return true;
 });
 
 sortRows(filteredRows, state.sortBy);
+// Update action bar count whenever filters run
+if(state.favoritesOnly){
+  els.favCount.textContent = filteredRows.length + " favorite" + (filteredRows.length === 1 ? "" : "s");
+  els.favActionBar.classList.add('visible');
+} else {
+  els.favActionBar.classList.remove('visible');
+}
 renderGrid();
 }
 
@@ -1439,15 +1560,18 @@ ${ccliBadgeHTML}
 ${panelHTML}
 </div>
 <div class="card-body">
+<div class="track-title-row">
 <div class="track-name">${trackNameHTML}</div>
+${favBadgeHTML}
+</div>
 <div class="artist-name">${artistNameHTML}</div>
 <div class="album-line">${albumNameHTML}${year? " · "+year : ""}${r["Track Duration (ms)"]? " · "+fmtDuration(r["Track Duration (ms)"]) : ""}</div>
-<div class="tag-row">${favBadgeHTML}${chartBadgeHTML}${ccliBadgeHTML}${tags.join("")}</div>
+<div class="tag-row">${chartBadgeHTML}${ccliBadgeHTML}${tags.join("")}</div>
 </div>
 </div>`;
 }
 
-/* ---------- v1.1: card action panel ---------- */
+/* ---------- v1.1: card action panel, notes, dim overlay ---------- */
 const DOTS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
 const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
 const HEART_OUTLINE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.8 1.2 6 3.6C14.2 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z"/></svg>';
@@ -1589,11 +1713,50 @@ state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=fal
 state.genres.clear();
 els.searchInput.value=""; els.psalmInput.value="";
 els.chartToggleBtn.setAttribute('aria-pressed', 'false');
+state.favoritesOnly = false;
+els.favOnlyBtn.setAttribute('aria-pressed', 'false');
+els.favActionBar.classList.remove('visible');
 els.excludeUnratedBtn.setAttribute('aria-pressed', 'false');
 document.querySelectorAll('.check-list input[type="checkbox"]').forEach(cb=>cb.checked=false);
 sliderResets.forEach(fn=>fn());
 visibleCount = PAGE_SIZE;
 applyFilters();
+});
+
+els.favOnlyBtn.addEventListener('click', () => {
+  if(!currentUser) return;
+  state.favoritesOnly = !state.favoritesOnly;
+  els.favOnlyBtn.setAttribute('aria-pressed', String(state.favoritesOnly));
+  visibleCount = PAGE_SIZE;
+  applyFilters();
+});
+
+// Build Spotify Playlist — copies all favorited Spotify URIs to clipboard so
+// the user can paste them straight into a new Spotify playlist. No API needed.
+els.spotifyBuildBtn.addEventListener('click', () => {
+  if(!favoriteUris.size){
+    alert("You have no favorites to export yet.");
+    return;
+  }
+  const uris = [...favoriteUris].join('\n');
+  navigator.clipboard.writeText(uris).then(() => {
+    const orig = els.spotifyBuildBtn.innerHTML;
+    els.spotifyBuildBtn.textContent = '✓ Copied to clipboard!';
+    els.spotifyBuildBtn.disabled = true;
+    setTimeout(() => {
+      els.spotifyBuildBtn.innerHTML = orig;
+      els.spotifyBuildBtn.disabled = false;
+    }, 2800);
+  }).catch(() => {
+    // Fallback: show a textarea they can copy manually (e.g. iOS Safari)
+    const box = document.createElement('textarea');
+    box.value = uris;
+    box.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80vw;height:40vh;z-index:9999;font-size:12px;padding:10px;';
+    document.body.appendChild(box);
+    box.select();
+    alert('Select all and copy these URIs, then paste them into a new Spotify playlist.\n\nClose this box when done.');
+    document.body.removeChild(box);
+  });
 });
 
 els.signInBtn.addEventListener('click', () => {
