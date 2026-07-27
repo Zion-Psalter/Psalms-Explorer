@@ -479,7 +479,7 @@ color: transparent !important;
 text-decoration: none !important;
 }
 
-/* ---------- v1.1: card action panel, notes, dim overlay ---------- */
+/* ---------- v1.1: card action panel ---------- */
 .more-btn{
   position: absolute;
   top: 9px; right: 9px;
@@ -498,15 +498,6 @@ text-decoration: none !important;
 .more-btn:hover{ background: var(--ink); transform: scale(1.08); }
 .more-btn:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
 .more-btn svg{ width: 15px; height: 15px; pointer-events: none; }
-/* small gold dot marks a card that already carries a note */
-.more-btn.has-note::after{
-  content: "";
-  position: absolute; top: -2px; right: -2px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--gold);
-  border: 1.5px solid var(--ink);
-}
 
 .card-panel{
   position: absolute;
@@ -558,66 +549,8 @@ text-decoration: none !important;
 .panel-row:focus-visible{ outline: 2px solid var(--gold); outline-offset: -2px; }
 .panel-row .ext{ margin-left: auto; color: var(--gold-dim); font-size: 10px; }
 
-/* Note editor lives in the same square, so the card never changes height. */
-.note-edit{
-  display: none;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding-top: 7px;
-}
-.card.note-editing .panel-list{ display: none; }
-.card.note-editing .note-edit{ display: flex; }
-.note-edit textarea{
-  flex: 1 1 auto;
-  min-height: 0;
-  resize: none;
-  background: var(--ink-2);
-  border: 1px solid var(--ink-3);
-  color: var(--text-light);
-  font-family: var(--font-body);
-  font-size: 12px;
-  line-height: 1.45;
-  padding: 7px 8px;
-  border-radius: var(--radius);
-}
-.note-edit textarea:focus{ outline: none; border-color: var(--gold-dim); }
-.note-edit textarea::placeholder{ color: var(--text-muted); }
-.note-actions{ display: flex; gap: 6px; flex: 0 0 auto; }
-.note-actions button{
-  flex: 1 1 0;
-  font-family: var(--font-mono);
-  font-size: 8px; font-weight: 600;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  padding: 6px 0;
-  border-radius: var(--radius);
-  cursor: pointer;
-  border: 1px solid var(--gold-dim);
-  background: transparent;
-  color: var(--gold-dim);
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.note-actions .save{ background: var(--gold); border-color: var(--gold); color: var(--ink); }
-.note-actions .cancel:hover{ border-color: var(--danger); color: var(--danger); }
-.note-actions .save:hover{ background: var(--gold-dim); border-color: var(--gold-dim); color: var(--text-light); }
-.note-actions button:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
-
-/* While a note is open, everything else is dimmed and unclickable so a
-   half-written note can't be abandoned by accident. */
-.dim-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(10,14,24,0.74);
-  z-index: 50;
-  display: none;
-}
-.dim-overlay.on{ display: block; }
-.card.note-editing{ z-index: 60; }
-.card.note-editing:hover{ transform: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
 @media (prefers-reduced-motion: reduce){
-  .panel-row, .more-btn, .note-actions button, .card{ transition: none; }
+  .panel-row, .more-btn, .card{ transition: none; }
 }
 
 .play-btn{
@@ -653,6 +586,43 @@ background: rgba(176,58,58,0.16);
 color: var(--danger);
 border: 1px solid rgba(176,58,58,0.4);
 cursor: default;
+}
+
+/* CCLI is also a presence indicator only — the actual SongSelect link lives
+   in the ⋮ panel, same pattern as Chart above. */
+.ccli-badge{
+font-family: var(--font-mono);
+font-size: 9.5px;
+font-weight: 600;
+letter-spacing: 0.04em;
+text-transform: uppercase;
+padding: 3px 7px;
+border-radius: 2px;
+background: rgba(58,110,176,0.16);
+color: #6FA8DC;
+border: 1px solid rgba(58,110,176,0.4);
+cursor: default;
+}
+
+/* Favorites heart — the one badge in this strip that's actually clickable. */
+.fav-badge{
+display: inline-flex;
+align-items: center;
+padding: 3px 6px;
+border-radius: 2px;
+background: transparent;
+color: var(--text-muted);
+border: 1px solid var(--ink-3);
+cursor: pointer;
+transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.fav-badge svg{ width: 11px; height: 11px; pointer-events: none; }
+.fav-badge:hover{ color: var(--gold); border-color: var(--gold-dim); }
+.fav-badge:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+.fav-badge.is-fav{
+background: rgba(199,154,63,0.16);
+color: var(--gold);
+border-color: rgba(199,154,63,0.4);
 }
 
 .rate-btn{
@@ -791,8 +761,6 @@ transition: all 0.15s ease;
 </style>
 </head>
 <body>
-<div class="dim-overlay" id="dimOverlay" aria-hidden="true"></div>
-
 
 <!-- RefTagger: turns Bible references (e.g. "Psalm 23") found in the page text into
 hoverable tooltips showing the verse. It only scans once on load, before any song
@@ -836,6 +804,7 @@ var refTagger = {
 <option value="length-desc">Track Length Descending</option>
 </select>
 </label>
+<button type="button" class="clear-btn" id="signInBtn">Sign in with Google</button>
 </div>
 </div>
 </header>
@@ -939,10 +908,94 @@ var refTagger = {
 </main>
 </div>
 
+<!-- Firebase: powers "Sign in with Google" and stores each user's Favorites -->
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+
 <script>
 const SPREADSHEET_ID = "1qoApr0hgfl-ts6G8eu9drre69h96zShdOHTVQlwDhuo";
 const SHEET_GID = "518638622";
 const GVIZ_BASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${SHEET_GID}&headers=1`;
+
+// ---------- Firebase: Google sign-in + Favorites storage ----------
+// Paste the 6 values from your Firebase "web app" config (Step 2) below.
+const firebaseConfig = {
+  apiKey: "AIzaSyCHygPYVvEiCsLAanox15dux-2604Lizek",
+  authDomain: "zion-psalms.firebaseapp.com",
+  projectId: "zion-psalms",
+  storageBucket: "zion-psalms.firebasestorage.app",
+  messagingSenderId: "722800414474",
+  appId: "1:722800414474:web:d9eda94d5021828e1d74f3"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+let currentUser = null;
+// Track URIs the signed-in user has favorited. Empty until they sign in
+// and loadFavorites() finishes reading their Firestore document.
+let favoriteUris = new Set();
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if(user){
+    els.signInBtn.textContent = "Sign out (" + (user.displayName || user.email) + ")";
+    loadFavorites();
+  }else{
+    els.signInBtn.textContent = "Sign in with Google";
+    favoriteUris = new Set();
+    renderGrid();
+  }
+});
+
+// Reads the signed-in user's favorites document (one per user, keyed by
+// their Google account ID) and re-renders so hearts reflect the real state.
+function loadFavorites(){
+  if(!currentUser) return;
+  db.collection('favorites').doc(currentUser.uid).get().then(doc => {
+    const data = doc.exists ? doc.data() : {};
+    favoriteUris = new Set(data.trackUris || []);
+    renderGrid();
+  }).catch(err => {
+    console.error(err);
+    alert("Couldn't load your favorites right now. Try refreshing the page.");
+  });
+}
+
+// Adds/removes one Track URI from Firestore, with an immediate UI update
+// (so it feels instant) that's rolled back if the save fails.
+function toggleFavorite(uri, btn){
+  if(!uri) return;
+  if(!currentUser){
+    auth.signInWithPopup(googleProvider).catch(err => console.error(err));
+    return;
+  }
+  const wasFav = favoriteUris.has(uri);
+  if(wasFav) favoriteUris.delete(uri); else favoriteUris.add(uri);
+  updateFavBtn(btn, !wasFav);
+
+  const ref = db.collection('favorites').doc(currentUser.uid);
+  const change = { trackUris: wasFav
+    ? firebase.firestore.FieldValue.arrayRemove(uri)
+    : firebase.firestore.FieldValue.arrayUnion(uri)
+  };
+  ref.set(change, { merge: true }).catch(err => {
+    console.error(err);
+    if(wasFav) favoriteUris.add(uri); else favoriteUris.delete(uri);
+    updateFavBtn(btn, wasFav);
+    alert("Couldn't save that favorite — check your connection and try again.");
+  });
+}
+
+function updateFavBtn(btn, isFav){
+  if(!btn) return;
+  btn.classList.toggle('is-fav', isFav);
+  btn.innerHTML = isFav ? HEART_FILLED_SVG : HEART_OUTLINE_SVG;
+  btn.title = isFav ? "Remove from Favorites" : "Add to Favorites";
+  btn.setAttribute('aria-pressed', String(isFav));
+}
 
 // "Rate this song" button -> opens the Fillout evaluation form (embedded at
 // singzion.com/evaluate) with the "Title and Artist of Song You're Evaluating"
@@ -990,6 +1043,7 @@ chartToggleBtn: document.getElementById('chartToggleBtn'),
 excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
 sortSelect: document.getElementById('sortSelect'),
 clearBtn: document.getElementById('clearBtn'),
+signInBtn: document.getElementById('signInBtn'),
 };
 
 function fmtDuration(ms){
@@ -1303,6 +1357,15 @@ const trackNameHTML = trackUrl
 ? `<a href="${trackUrl}" target="_blank" rel="noopener">${escapeHTML(r["Track Name"]||"")}</a>`
 : escapeHTML(r["Track Name"]||"");
 
+// Favorites heart. Keyed by Track URI (same stable key used for Spotify links
+// above), matched against the signed-in user's favoriteUris Set. Hidden
+// entirely for rows with no Track URI, since there'd be nothing to match on.
+const favUri = (r["Track URI"]||"").trim();
+const isFav = favUri && favoriteUris.has(favUri);
+const favBadgeHTML = favUri
+? `<button type="button" class="fav-badge${isFav ? ' is-fav' : ''}" data-uri="${escapeHTML(favUri)}" title="${isFav ? 'Remove from Favorites' : 'Add to Favorites'}" aria-pressed="${isFav}">${isFav ? HEART_FILLED_SVG : HEART_OUTLINE_SVG}</button>`
+: "";
+
 // Artist name(s) -> individual Spotify artist links, positionally paired with Artist URI(s)
 const artistNames = splitMulti(r["Artist Name(s)"]);
 const artistUris = splitMulti(r["Artist URI(s)"]);
@@ -1324,17 +1387,17 @@ const albumNameHTML = albumUrl
 const trackArtist = `${(r["Track Name"]||"").trim()} || ${(r["Artist Name(s)"]||"").trim()}`;
 const rateUrl = `${FORM_BASE_URL}?${FORM_TRACK_ARTIST_PARAM}=${encodeURIComponent(trackArtist)}`;
 
-// --- v1.1 action panel -------------------------------------------------
-// Stable per-song key for locally saved notes. Track URI is permanent; the
-// name pair is only a fallback for rows missing a URI.
-const noteKey = (r["Track URI"]||"").trim() || trackArtist;
-const savedNote = noteGet(noteKey);
-
 // Optional link columns. Each row is omitted entirely when its cell is empty —
 // a missing link is better than a dead one.
 const lyricsUrl = (r["Lyrics URL"]||"").trim();
 const chordsUrl = (r["Chord Chart URL"]||"").trim();
 const ccliUrl   = (r["CCLI URL"]||"").trim();
+
+// CCLI badge is a presence indicator, same pattern as the Chart badge above —
+// the actual SongSelect link lives in the ⋮ panel ("CCLI info" row).
+const ccliBadgeHTML = ccliUrl
+? `<span class="ccli-badge" title="Click ⋮ to view in CCLI SongSelect">CCLI</span>`
+: "";
 
 function extRow(label, href, title){
   if(!href) return "";
@@ -1347,19 +1410,11 @@ const panelRows = [
   extRow("Chord chart", chordsUrl),
   extRow("CCLI info", ccliUrl),
   extRow("Rate this song", rateUrl),
-  `<button type="button" class="panel-row note-row">${savedNote ? "Edit my note" : "Add my note"}</button>`
 ].join("");
 
 const panelHTML = `
 <div class="card-panel">
   <div class="panel-list">${panelRows}</div>
-  <div class="note-edit">
-    <textarea placeholder="Notes for this song — where it fits, what worked..." maxlength="600"></textarea>
-    <div class="note-actions">
-      <button type="button" class="cancel">Cancel</button>
-      <button type="button" class="save">Save</button>
-    </div>
-  </div>
 </div>`;
 
 // RefTagger only tags references with a verse number, never a bare chapter like
@@ -1369,15 +1424,16 @@ const panelHTML = `
 // CSS below stretches the resulting link to cover the whole circular badge so hovering
 // anywhere on it shows the real full-psalm preview tooltip.
 return `
-<div class="card" data-note-key="${escapeHTML(noteKey)}">
+<div class="card">
 <div class="art-wrap">
 ${img ? `<img src="${img}" loading="lazy" alt="">` : ""}
 ${psalm ? `<div class="psalm-badge"><span class="lbl">Psalm</span> ${psalm}<span class="psalm-hover-ref" data-psalm="${escapeHTML(psalm)}" aria-hidden="true">Psalm ${psalm}:1-200</span></div>` : ""}
 ${chartBadgeHTML}
+${ccliBadgeHTML}
 <button class="play-btn" data-src="${preview}" ${preview? "" : "disabled"} title="${preview? "Play 30s preview" : "No preview available"}">
 <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6,4 20,12 6,20"></polygon></svg>
 </button>
-<button type="button" class="more-btn${savedNote ? ' has-note' : ''}" aria-label="More options for this song" aria-expanded="false" title="More options">
+<button type="button" class="more-btn" aria-label="More options for this song" aria-expanded="false" title="More options">
 <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>
 </button>
 ${panelHTML}
@@ -1386,41 +1442,20 @@ ${panelHTML}
 <div class="track-name">${trackNameHTML}</div>
 <div class="artist-name">${artistNameHTML}</div>
 <div class="album-line">${albumNameHTML}${year? " · "+year : ""}${r["Track Duration (ms)"]? " · "+fmtDuration(r["Track Duration (ms)"]) : ""}</div>
-<div class="tag-row">${chartBadgeHTML}${tags.join("")}</div>
+<div class="tag-row">${favBadgeHTML}${chartBadgeHTML}${ccliBadgeHTML}${tags.join("")}</div>
 </div>
 </div>`;
 }
 
-/* ---------- v1.1: action panel, local notes, dim overlay ---------- */
-// Notes are stored in this browser only, keyed by Track URI. Version 2.0 moves
-// them into the user's own Google Drive so they follow them across devices.
-// localStorage can be blocked outright inside a cross-origin iframe (Safari),
-// so every access is guarded and the feature degrades to read-only rather
-// than throwing.
-const NOTE_PREFIX = "zp-note:";
-let notesWritable = true;
-
-function noteGet(key){
-  try{ return localStorage.getItem(NOTE_PREFIX + key) || ""; }
-  catch(e){ notesWritable = false; return ""; }
-}
-function noteSet(key, val){
-  try{
-    if(val) localStorage.setItem(NOTE_PREFIX + key, val);
-    else localStorage.removeItem(NOTE_PREFIX + key);
-    return true;
-  }catch(e){ notesWritable = false; return false; }
-}
-
+/* ---------- v1.1: card action panel ---------- */
 const DOTS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
 const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
-
-const dimEl = document.getElementById('dimOverlay');
-let noteOriginal = "";
+const HEART_OUTLINE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.8 1.2 6 3.6C14.2 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z"/></svg>';
+const HEART_FILLED_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.8 1.2 6 3.6C14.2 5.2 15.8 4 18 4c4 0 5.5 4 4 7.7-2.5 4.7-10 9.3-10 9.3z"/></svg>';
 
 function panelClose(card){
   if(!card) return;
-  card.classList.remove('flipped', 'note-editing');
+  card.classList.remove('flipped');
   const btn = card.querySelector('.more-btn');
   if(btn){ btn.innerHTML = DOTS_SVG; btn.setAttribute('aria-expanded', 'false'); btn.title = "More options"; }
 }
@@ -1436,69 +1471,24 @@ function panelOpen(card){
   btn.title = "Close";
 }
 
-function noteEditOpen(card){
-  const key = card.getAttribute('data-note-key') || "";
-  const ta = card.querySelector('.note-edit textarea');
-  noteOriginal = noteGet(key);
-  ta.value = noteOriginal;
-  if(!notesWritable){
-    ta.placeholder = "This browser is blocking saved notes. Open the full page in its own tab to use them.";
-  }
-  card.classList.add('note-editing');
-  dimEl.classList.add('on');
-  ta.focus();
-}
-function noteEditExit(card){
-  card.classList.remove('note-editing');
-  dimEl.classList.remove('on');
-  noteOriginal = "";
-}
-function noteEditCancel(card){
-  const ta = card.querySelector('.note-edit textarea');
-  if(ta.value !== noteOriginal && !confirm("Discard your note?")) return;
-  noteEditExit(card);
-}
-function noteEditSave(card){
-  const key = card.getAttribute('data-note-key') || "";
-  const ta = card.querySelector('.note-edit textarea');
-  const val = ta.value.trim();
-  const ok = noteSet(key, val);
-  if(!ok){
-    alert("This browser won't let the page save notes here. Open the full page in its own tab and try again.");
-    return;
-  }
-  const moreBtn = card.querySelector('.more-btn');
-  moreBtn.classList.toggle('has-note', !!val);
-  const noteRow = card.querySelector('.note-row');
-  if(noteRow) noteRow.textContent = val ? "Edit my note" : "Add my note";
-  noteEditExit(card);
-}
-
 // One delegated listener survives every re-render of the grid.
 els.grid.addEventListener('click', e=>{
   const card = e.target.closest('.card');
   if(!card) return;
 
   if(e.target.closest('.more-btn')){
-    if(card.classList.contains('note-editing')) return;
     card.classList.contains('flipped') ? panelClose(card) : panelOpen(card);
     return;
   }
-  if(e.target.closest('.note-row')){ noteEditOpen(card); return; }
-  if(e.target.closest('.note-actions .save')){ noteEditSave(card); return; }
-  if(e.target.closest('.note-actions .cancel')){ noteEditCancel(card); return; }
-});
-
-// Clicking the dimmed backdrop is a cancel, same as the button.
-dimEl.addEventListener('click', ()=>{
-  const card = els.grid.querySelector('.card.note-editing');
-  if(card) noteEditCancel(card);
+  const favBtn = e.target.closest('.fav-badge');
+  if(favBtn){
+    toggleFavorite(favBtn.getAttribute('data-uri'), favBtn);
+    return;
+  }
 });
 
 document.addEventListener('keydown', e=>{
   if(e.key !== "Escape") return;
-  const editing = els.grid.querySelector('.card.note-editing');
-  if(editing){ noteEditCancel(editing); return; }
   const flipped = els.grid.querySelector('.card.flipped');
   if(flipped) panelClose(flipped);
 });
@@ -1604,6 +1594,14 @@ document.querySelectorAll('.check-list input[type="checkbox"]').forEach(cb=>cb.c
 sliderResets.forEach(fn=>fn());
 visibleCount = PAGE_SIZE;
 applyFilters();
+});
+
+els.signInBtn.addEventListener('click', () => {
+  if(currentUser){ auth.signOut(); return; }
+  auth.signInWithPopup(googleProvider).catch(err => {
+    console.error(err);
+    alert("Sign-in didn't go through. Try opening the Explorer in its own tab and signing in there.");
+  });
 });
 
 loadData();
