@@ -1,6 +1,6 @@
 # Zion Psalms — Psalms Explorer
 
-A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an iframe on [singzion.com](https://www.singzion.com). It pulls data live from a Google Sheet, so the site always reflects the current state of the sheet — no rebuild or redeploy needed when the data changes.
+A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an iframe on [singzion.com](https://www.singzion.com). Song data comes from a Google Sheet, synced hourly into a static file the app reads — so it stays fast at any catalog size, while the Sheet stays the actual editing surface (see [Data source](#data-source) below for why).
 
 **Live site:** `(https://zion-psalter.github.io/Psalms-Explorer/)`
 **Embedded at:** singzion.com (via Google Sites → Insert → Embed → By URL)
@@ -24,19 +24,23 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 
 ## How it works
 
-This is a single self-contained file: **`index.html`**. There's no build step, no dependencies to install, and no backend — everything (HTML, CSS, and JavaScript) lives in that one file. To edit it, you can use GitHub's built-in web editor; no local setup required.
+The app itself is a single self-contained file: **`index.html`**. There's no build step, no dependencies to install, and no backend — all its HTML, CSS, and JavaScript lives in that one file, and it renders whatever's in **`data.json`**, which sits right alongside it. To edit `index.html`, you can use GitHub's built-in web editor; no local setup required.
 
 ### Data source
 
-The app reads from this Google Sheet:
+The song catalog itself still lives in this Google Sheet — that part hasn't changed, and it's still where you add/edit songs:
 
 - **Sheet:** `Zion Psalms`
 - **Spreadsheet ID:** `1qoApr0hgfl-ts6G8eu9drre69h96zShdOHTVQlwDhuo`
 - **Tab (gid):** `518638622`
 
-On every page load, the app fetches the sheet's data using Google's `gviz/tq` endpoint (a public, script-based data feed Google provides for every sheet — this is *not* the same as the "Publish to web" CSV export, which has a CORS restriction that blocks it from loading directly into a webpage). You shouldn't need to touch this unless the underlying spreadsheet is ever replaced or restructured — see [Changing the data source](#changing-the-data-source) below.
+What *has* changed: `index.html` no longer talks to the Sheet directly. A scheduled GitHub Action (**`.github/workflows/sync-sheet.yml`**, running **`scripts/sync-sheet.mjs`**) fetches the Sheet **once an hour**, trims it down to just the columns the app uses, and commits the result to **`data.json`** in this repo. The app just does a plain `fetch('./data.json')` on load — a static file GitHub Pages already serves efficiently, versus querying the Sheet live on every single visit.
 
-**Important:** the sheet must stay shared as **"Anyone with the link can view."** If that permission is ever changed, the app will fail to load data (it'll show a clear on-screen error rather than fail silently).
+Why bother with the extra layer: the Sheet is genuinely great as an editing surface (bulk edits, familiar spreadsheet UI, pasting straight from Spotify export tools) but was never designed to be a public data API — Google's `gviz/tq` endpoint used for that is an unofficial, legacy mechanism, and it made the live-fetched payload the single biggest cost on the page (over 1MB and growing with every song added), with none of the caching a plain static file gets for free.
+
+**Practical effect: data changes take up to an hour to show up on the live site**, not instantly. To force it sooner, go to the repo's **Actions** tab → "Sync sheet data" → **Run workflow**.
+
+**Important:** the sheet must stay shared as **"Anyone with the link can view"** — the sync job reads it the same way the app used to, with no special credentials. If that permission is ever changed, the next sync will fail (check the **Actions** tab for a red X) rather than silently going stale.
 
 ### Sign-in & Favorites (Firebase)
 
@@ -84,7 +88,7 @@ Rows with an empty `Track Name` are skipped automatically, so blank rows in the 
 ## Making changes
 
 ### Editing content or data
-No code changes needed — just edit the Google Sheet. New rows, updated ratings, corrected typos, etc. all show up automatically the next time someone loads the page (the app fetches fresh data from the sheet on every page load — there's no separate refresh button).
+No code changes needed — just edit the Google Sheet. New rows, updated ratings, corrected typos, etc. show up on the live site within an hour (the next scheduled sync), or immediately if you trigger the "Sync sheet data" workflow manually from the **Actions** tab.
 
 ### Editing the app itself (design, filters, behavior)
 1. Go to the repo on GitHub and open `index.html`
@@ -96,7 +100,7 @@ No code changes needed — just edit the Google Sheet. New rows, updated ratings
 For anything more than a small tweak, it's worth pasting the relevant section into an AI assistant (like Claude) along with a description of the change you want — the file is organized with clear CSS and JS sections and inline comments to make this easy.
 
 ### Changing the data source
-If the Google Sheet is ever replaced, moved, or its tab structure changes, update these two constants near the top of the `<script>` section in `index.html`:
+If the Google Sheet is ever replaced, moved, or its tab structure changes, update these two constants near the top of **`scripts/sync-sheet.mjs`** (not `index.html` — the sync script is the only thing that talks to the Sheet now):
 
 ```js
 const SPREADSHEET_ID = "1qoApr0hgfl-ts6G8eu9drre69h96zShdOHTVQlwDhuo";
@@ -106,18 +110,22 @@ const SHEET_GID = "518638622";
 - `SPREADSHEET_ID` is the long string in the sheet's normal share URL: `docs.google.com/spreadsheets/d/`**`THIS_PART`**`/edit`
 - `SHEET_GID` is the number after `gid=` at the end of the URL when you have the correct tab open
 
+### Rearranging columns in the sheet is safe
+
+`scripts/sync-sheet.mjs` matches columns by their **header text** (`USED_COLUMNS`), not by position — so freely reordering, or inserting new columns anywhere in the sheet, won't break anything. The only thing that matters is that the header text for a column the app uses (see [Expected columns](#expected-columns) below) isn't renamed to something different — if it is, that field just goes blank in `data.json` on the next sync, the same graceful-degradation behavior as before.
+
 ---
 
 ## Troubleshooting
 
 **"Couldn't load the sheet" error on page load**
-Almost always a sharing-permissions issue. Open the Google Sheet → Share → confirm it's set to "Anyone with the link" → "Viewer."
+The app couldn't fetch `data.json` at all (as opposed to it just being stale) — most likely `data.json` doesn't exist yet (e.g. the very first sync hasn't run), or the last sync run failed. Check the repo's **Actions** tab for the "Sync sheet data" workflow's most recent run; a red X there usually means the underlying Google Sheet fetch failed, most often a sharing-permissions issue — confirm the Sheet is still set to "Anyone with the link" → "Viewer."
 
 **Data looks outdated**
-Hard-refresh the browser page (Ctrl/Cmd+Shift+R). The app doesn't cache data between visits, but browsers sometimes cache the page itself.
+This is expected for up to an hour — see [Data source](#data-source) above. Check the **Actions** tab to see when "Sync sheet data" last ran successfully, or trigger it manually ("Run workflow") for an immediate update. If the sync itself is up to date but the *site* still looks stale, hard-refresh the browser page (Ctrl/Cmd+Shift+R) — that's a normal browser-cache issue, not a data one.
 
 **A filter isn't working / a facet is empty**
-Check that the corresponding column header in the sheet exactly matches the names listed in [Expected columns](#expected-columns) above — even small differences (extra space, different capitalization) will break the match.
+Check that the corresponding column header in the sheet exactly matches the names listed in [Expected columns](#expected-columns) above — even small differences (extra space, different capitalization) will break the match. Also confirm the last sync succeeded (Actions tab) — a renamed column just means that field is blank until the header text matches again, not an error.
 
 **A track/artist/album isn't clickable**
 That row's URI column is either empty or not in Spotify's standard `spotify:track:...` format. The app falls back to plain text rather than showing a broken link, so this degrades gracefully — but if it should link somewhere, check that cell in the sheet.

@@ -1009,9 +1009,11 @@ var refTagger = {
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
 
 <script>
-const SPREADSHEET_ID = "1qoApr0hgfl-ts6G8eu9drre69h96zShdOHTVQlwDhuo";
-const SHEET_GID = "518638622";
-const GVIZ_BASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${SHEET_GID}&headers=1`;
+// Song data is no longer fetched live from the Google Sheet here — a scheduled
+// GitHub Action (.github/workflows/sync-sheet.yml, running scripts/sync-sheet.mjs)
+// pulls the sheet hourly and commits the result to data.json, right alongside
+// this file. See README.md > Changing the data source for how to repoint it.
+const DATA_URL = "./data.json";
 
 // ---------- Firebase: Google sign-in + Favorites storage ----------
 // Paste the 6 values from your Firebase "web app" config (Step 2) below.
@@ -1051,7 +1053,11 @@ auth.onAuthStateChanged(user => {
       state.favoritesOnly = false;
       els.favActionBar.classList.remove('visible');
     }
-    renderGrid();
+    // Only re-render if the song data actually loaded — otherwise this
+    // clobbers the "couldn't load" error (or the pre-load state) with the
+    // "no songs match" empty grid, since Firebase's auth check resolves
+    // independently of whether loadData() has succeeded yet.
+    if(dataLoaded) renderGrid();
   }
 });
 
@@ -1063,7 +1069,7 @@ function loadFavorites(){
     const data = doc.exists ? doc.data() : {};
     favoriteUris = new Set(data.trackUris || []);
     updateFavOnlyCount();
-    renderGrid();
+    if(dataLoaded) renderGrid();
   }).catch(err => {
     console.error(err);
     alert("Couldn't load your favorites right now. Try refreshing the page.");
@@ -1198,87 +1204,31 @@ if(parts.length < 3 || parts[0] !== "spotify") return "";
 return `https://open.spotify.com/${parts[1]}/${parts[2]}`;
 }
 
-function gvizDateToString(v){
-// gviz returns dates as literal strings like "Date(2023,0,15)" (month is 0-indexed)
-const m = /^Date\(([^)]+)\)$/.exec(v);
-if(!m) return v;
-const parts = m[1].split(",").map(n => parseInt(n.trim(), 10));
-const [y, mo, d] = parts;
-const dt = new Date(y, mo || 0, d || 1);
-const mm = String(dt.getMonth()+1).padStart(2,"0");
-const dd = String(dt.getDate()).padStart(2,"0");
-return `${dt.getFullYear()}-${mm}-${dd}`;
-}
-
-function gvizTableToRows(table){
-const labels = table.cols.map(c => (c.label || c.id || "").trim());
-return table.rows.map(row => {
-const obj = {};
-labels.forEach((label, i) => {
-const cell = row.c ? row.c[i] : null;
-let val = "";
-if(cell && cell.v !== null && cell.v !== undefined){
-val = typeof cell.v === "string" ? gvizDateToString(cell.v) : String(cell.v);
-}
-obj[label] = val;
-});
-return obj;
-});
-}
-
-let jsonpTimeoutHandle = null;
-
 function loadData(){
 els.headerCount.textContent = "Loading…";
 
-const cbName = "zpCallback_" + Date.now();
-const existingScript = document.getElementById('zpJsonpScript');
-if(existingScript) existingScript.remove();
-
-const cleanup = () => {
-clearTimeout(jsonpTimeoutHandle);
-delete window[cbName];
-const s = document.getElementById('zpJsonpScript');
-if(s) s.remove();
-};
-
-window[cbName] = function(json){
-cleanup();
-
-if(!json || json.status === "error"){
-const msg = (json && json.errors && json.errors[0] && json.errors[0].detailed_message) || "Unknown error from Google Sheets.";
-showLoadError(msg);
-return;
-}
-try{
-const rows = gvizTableToRows(json.table);
-allRows = rows.filter(r => (r["Track Name"] || "").trim() !== "");
+fetch(DATA_URL)
+.then(res => {
+if(!res.ok) throw new Error(`HTTP ${res.status}`);
+return res.json();
+})
+.then(data => {
+// data.json stores {columns, rows} with rows as plain value arrays (not
+// {"Track Name": ...} objects) — repeating every column name on each of
+// ~1,300 rows was most of the file's weight. Rebuild the row-object shape
+// the rest of the app expects here, once, on load.
+const cols = data.columns;
+allRows = data.rows
+.map(r => { const obj = {}; cols.forEach((c,i) => obj[c] = r[i]); return obj; })
+.filter(r => (r["Track Name"] || "").trim() !== "");
 dataLoaded = true;
 buildFacetOptions();
 applyFilters();
-}catch(e){
-console.error(e);
-showLoadError("The sheet responded, but the data couldn't be read. " + e.message);
-}
-};
-
-jsonpTimeoutHandle = setTimeout(() => {
-if(window[cbName]){
-cleanup();
-showLoadError("Timed out waiting on Google Sheets. The sheet may not be shared as \"Anyone with the link can view,\" or the gid/sheet may have changed.");
-}
-}, 10000);
-
-const script = document.createElement('script');
-script.id = 'zpJsonpScript';
-script.src = GVIZ_BASE + "&tqx=out:json;responseHandler:" + cbName;
-script.onerror = function(){
-if(window[cbName]){
-cleanup();
-showLoadError("Couldn't reach Google Sheets. Check the sheet is shared as \"Anyone with the link can view.\"");
-}
-};
-document.body.appendChild(script);
+})
+.catch(err => {
+console.error(err);
+showLoadError("Couldn't load song data (" + err.message + "). Try refreshing the page.");
+});
 }
 
 function showLoadError(detail){
