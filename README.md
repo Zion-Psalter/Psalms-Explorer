@@ -7,7 +7,7 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 
 ---
 
-## Features (current: v2.0)
+## Features (current: v2.1)
 
 - **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), Mood / Congregational / Textual Variance dual-handle sliders (each label has a hover tooltip explaining what it means), a "Charted songs only" toggle, an "Exclude unrated songs" toggle, and — once signed in — a "My Favorites" toggle. Any combination can be cleared at once.
 - **Sorting** — by Psalm number, artist, release date, or track length, ascending or descending, from the dropdown in the header.
