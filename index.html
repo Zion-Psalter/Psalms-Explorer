@@ -847,7 +847,7 @@ cards exist, so tagPsalmRefs() below re-triggers it after every dynamic grid ren
 var refTagger = {
   settings: {
     bibleVersion: 'ESV',
-    bibleReader: 'app.logos'
+    bibleReader: 'biblia'
   }
 };
 
@@ -1413,11 +1413,11 @@ setTimeout(tagPsalmRefs, 400);
 // data-reference/data-version at hover time (not href) and already clamps that padded
 // range correctly, so it's left untouched — only the click-through href is replaced
 // with a plain whole-chapter reference (no verse number at all, which ref.ly resolves
-// reliably), routed through the Logos reader set in refTagger.settings.bibleReader.
+// reliably), routed through the Biblia reader set in refTagger.settings.bibleReader.
 function fixPsalmRefLinks(){
 els.grid.querySelectorAll('.psalm-hover-ref[data-psalm]').forEach(wrap=>{
 const a = wrap.querySelector('a.rtBibleRef');
-if(a) a.href = `https://ref.ly/${encodeURIComponent('Ps ' + wrap.dataset.psalm)};esv?t=app.logos`;
+if(a) a.href = `https://ref.ly/${encodeURIComponent('Ps ' + wrap.dataset.psalm)};esv?t=biblia`;
 });
 }
 
