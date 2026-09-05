@@ -21,7 +21,7 @@ const USED_COLUMNS = [
   "Album Release Date", "Album Image URL", "Track Duration (ms)",
   "Track Preview URL", "Track URI", "Artist URI(s)", "Album URI",
   "Genre", "Mood", "Congregational", "Textual Variance", "Chart",
-  "Chord Chart URL", "Lyrics URL", "CCLI URL",
+  "Chord Chart URL", "Lyrics URL", "CCLI URL", "Tags",
 ];
 
 // Mirrors gvizDateToString() that used to live in index.html: gviz encodes
