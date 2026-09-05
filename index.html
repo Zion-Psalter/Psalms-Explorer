@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Zion Psalms Explorer — v2.1 — 2026-07-29 -->
+<!-- Zion Psalms Explorer — v2.3 — 2026-09-04 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -232,6 +232,33 @@ margin-left: auto;
 font-family: var(--font-mono);
 font-size: 10.5px;
 color: var(--text-muted);
+}
+
+/* Tags facet — same-size toggle pills, no counts. Built dynamically from
+   whatever Tags values currently exist in the data, so a tag with no songs
+   left simply never renders (see renderTagCloud). */
+.tag-cloud{
+display: flex;
+flex-wrap: wrap;
+gap: 6px;
+}
+.tag-pill{
+font-family: var(--font-mono);
+font-size: 10.5px;
+letter-spacing: 0.03em;
+padding: 5px 10px;
+border-radius: 999px;
+background: none;
+border: 1px solid var(--ink-3);
+color: var(--text-muted);
+cursor: pointer;
+transition: all 0.15s ease;
+}
+.tag-pill:hover{ border-color: var(--gold-dim); color: var(--text-light); }
+.tag-pill.active{
+border-color: rgba(158,111,217,0.5);
+color: #9E6FD9;
+background: rgba(158,111,217,0.12);
 }
 
 /* ---------- Dual-handle range slider ---------- */
@@ -787,6 +814,14 @@ background: #174d9426;
 color: var(--pine-dim);
 border-color: #1c41e94d;
 }
+/* User-curated Tags (e.g. "Starter Set", "Founder's Faves") — a distinct
+   color family from Genre/Mood/Congregational/Textual Variance above, since
+   these are editorial picks rather than descriptive attributes. */
+.tag.user-tag{
+background: rgba(158,111,217,0.15);
+color: #9E6FD9;
+border-color: rgba(158,111,217,0.35);
+}
 
 /* ---------- States ---------- */
 .state-box{
@@ -905,6 +940,13 @@ var refTagger = {
 <p class="facet-title"><span>Genre</span><span class="chev">▾</span></p>
 <div class="facet-body">
 <div class="check-list" id="genreList"></div>
+</div>
+</div>
+
+<div class="facet-block" id="tagsBlock">
+<p class="facet-title"><span>Tags</span><span class="chev">▾</span></p>
+<div class="facet-body">
+<div class="tag-cloud" id="tagsCloud"></div>
 </div>
 </div>
 
@@ -1152,6 +1194,7 @@ const state = {
 search: "",
 psalm: "",
 genres: new Set(),
+tags: new Set(),
 moodMin: 0, moodMax: 10,
 congMin: 0, congMax: 10,
 textVarMin: 0, textVarMax: 10,
@@ -1170,6 +1213,7 @@ loadMoreBtn: document.getElementById('loadMoreBtn'),
 searchInput: document.getElementById('searchInput'),
 psalmInput: document.getElementById('psalmInput'),
 genreList: document.getElementById('genreList'),
+tagsCloud: document.getElementById('tagsCloud'),
 chartToggleBtn: document.getElementById('chartToggleBtn'),
 excludeUnratedBtn: document.getElementById('excludeUnratedBtn'),
 sortSelect: document.getElementById('sortSelect'),
@@ -1243,14 +1287,42 @@ els.headerCount.textContent = "";
 
 function buildFacetOptions(){
 const genres = new Map();
+const tagSet = new Set();
 
 allRows.forEach(r=>{
 const g = splitMulti(r["Genre"]);
 if(g.length===0){ genres.set("Untagged", (genres.get("Untagged")||0)+1); }
 else g.forEach(v => genres.set(v, (genres.get(v)||0)+1));
+
+splitMulti(r["Tags"]).forEach(v => tagSet.add(v));
 });
 
 renderCheckList(els.genreList, genres, state.genres, 'genre');
+renderTagCloud(els.tagsCloud, tagSet, state.tags);
+}
+
+// Tags facet — unlike renderCheckList (Genre), this shows no counts and every
+// pill is the same size (a deliberate choice: no "bigger tag = more used"
+// signal). A tag only appears here at all while at least one row still has
+// it, since tagSet above is rebuilt from allRows on every load.
+function renderTagCloud(container, tagSet, stateSet){
+const labels = [...tagSet].sort((a,b)=>a.localeCompare(b));
+container.innerHTML = labels.map(label=>{
+const active = stateSet.has(label);
+return `<button type="button" class="tag-pill${active?' active':''}" data-tag="${label.replace(/"/g,'&quot;')}" aria-pressed="${active}">${escapeHTML(label)}</button>`;
+}).join("");
+
+container.querySelectorAll('.tag-pill').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+const val = btn.dataset.tag;
+if(stateSet.has(val)) stateSet.delete(val);
+else stateSet.add(val);
+btn.classList.toggle('active');
+btn.setAttribute('aria-pressed', String(stateSet.has(val)));
+visibleCount = PAGE_SIZE;
+applyFilters();
+});
+});
 }
 
 function renderCheckList(container, map, stateSet, groupName){
@@ -1292,6 +1364,10 @@ if(state.genres.size>0){
 const g = splitMulti(r["Genre"]);
 const rowGenres = g.length ? g : ["Untagged"];
 if(!rowGenres.some(v=>state.genres.has(v))) return false;
+}
+if(state.tags.size>0){
+const rowTags = splitMulti(r["Tags"]);
+if(!rowTags.some(v=>state.tags.has(v))) return false;
 }
 if(!passesRange(r["Mood"], state.moodMin, state.moodMax, state.excludeUnrated)) return false;
 if(!passesRange(r["Congregational"], state.congMin, state.congMax, state.excludeUnrated)) return false;
@@ -1427,12 +1503,14 @@ const psalm = (r["Psalm No"]||"").trim();
 const preview = (r["Track Preview URL"]||"").trim();
 const year = (r["Album Release Date"]||"").trim().slice(0,4);
 const genres = splitMulti(r["Genre"]);
+const userTags = splitMulti(r["Tags"]);
 const mood = (r["Mood"]||"").trim();
 const cong = (r["Congregational"]||"").trim();
 const textVar = (r["Textual Variance"]||"").trim();
 const isChart = String(r["Chart"]||"").trim().toUpperCase()==="TRUE";
 
 const tags = [];
+userTags.forEach(t => tags.push(`<span class="tag user-tag">${escapeHTML(t)}</span>`));
 genres.forEach(g => tags.push(`<span class="tag">${escapeHTML(g)}</span>`));
 if(mood) tags.push(`<span class="tag mood">mood ${escapeHTML(mood)}</span>`);
 if(cong) tags.push(`<span class="tag">congr. ${escapeHTML(cong)}</span>`);
@@ -1684,6 +1762,11 @@ els.loadMoreBtn.addEventListener('click', ()=>{ visibleCount += PAGE_SIZE; rende
 els.clearBtn.addEventListener('click', ()=>{
 state.search=""; state.psalm=""; state.chartOnly=false; state.excludeUnrated=false;
 state.genres.clear();
+state.tags.clear();
+els.tagsCloud.querySelectorAll('.tag-pill.active').forEach(btn=>{
+btn.classList.remove('active');
+btn.setAttribute('aria-pressed', 'false');
+});
 els.searchInput.value=""; els.psalmInput.value="";
 els.chartToggleBtn.setAttribute('aria-pressed', 'false');
 state.favoritesOnly = false;
