@@ -148,9 +148,134 @@ padding-right: 10px;
 border-top: 1px solid var(--ink-3);
 padding-top: 14px;
 }
-.facets > .facet-block:first-child{
+.facets > .facet-block:first-child,
+.facets > .facet-drawer-head + .facet-block{
 border-top: none;
 padding-top: 0;
+}
+
+/* ---------- Mobile: filters become a left-edge slide-out drawer ----------
+On phones the rail used to sit above the cards, so changing a filter meant
+scrolling all the way back up. Now a tab on the left edge (position:fixed,
+so it's reachable from anywhere in the list) opens/closes it. Desktop keeps
+the two-column layout and never sees any of these elements. */
+.filter-toggle, .filter-backdrop, .facet-drawer-head{ display: none; }
+@media (max-width: 860px){
+:root{ --drawer-w: min(86vw, 320px); }
+.layout{ padding-left: 32px; }
+
+.filter-toggle{
+display: flex;
+align-items: center;
+gap: 8px;
+position: fixed;
+left: 0;
+top: 50%;
+transform: translateY(-50%);
+z-index: 60;
+writing-mode: vertical-rl;
+padding: 0;
+overflow: hidden;
+background: var(--gold);
+color: var(--ink);
+border: 1px solid var(--gold);
+border-left: none;
+border-radius: 0 8px 8px 0;
+font-family: var(--font-mono);
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+cursor: pointer;
+box-shadow: 2px 2px 14px rgba(0,0,0,0.55);
+transition: left 0.25s ease;
+}
+.filter-toggle-main{
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 14px 6px;
+}
+.filter-toggle svg{ width: 14px; height: 14px; flex: 0 0 auto; }
+/* Live song count, stacked directly under the label as an inverted (dark)
+chip so it reads as its own piece of the tab. */
+.filter-toggle-count{
+padding: 9px 6px;
+background: var(--ink);
+color: var(--gold);
+letter-spacing: 0.04em;
+}
+.filter-toggle-count:empty{ display: none; }
+.filter-toggle:focus-visible{ outline: 2px solid var(--text-light); outline-offset: 2px; }
+body.filters-open .filter-toggle{ left: var(--drawer-w); }
+
+.filter-backdrop{
+display: block;
+position: fixed;
+inset: 0;
+background: rgba(10,14,24,0.6);
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.25s ease;
+z-index: 40;
+}
+body.filters-open .filter-backdrop{ opacity: 1; pointer-events: auto; }
+body.filters-open{ overflow: hidden; }
+
+.facets{
+position: fixed;
+top: 0; left: 0; bottom: 0;
+width: var(--drawer-w);
+z-index: 50;
+background: var(--ink);
+border-right: 1px solid var(--ink-3);
+box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+overflow-y: auto;
+overscroll-behavior: contain;
+padding: 0 18px 32px;
+transform: translateX(-100%);
+visibility: hidden;
+transition: transform 0.25s ease, visibility 0s linear 0.25s;
+}
+body.filters-open .facets{
+transform: none;
+visibility: visible;
+transition: transform 0.25s ease, visibility 0s;
+}
+
+.facet-drawer-head{
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+position: sticky;
+top: 0;
+z-index: 1;
+margin: 0 -18px;
+padding: 12px 18px;
+background: var(--ink);
+border-bottom: 1px solid var(--ink-3);
+}
+.facet-drawer-title{
+font-family: var(--font-mono);
+font-size: 11px;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+color: var(--text-muted);
+}
+.facet-drawer-done{
+font-family: var(--font-mono);
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 0.04em;
+padding: 7px 14px;
+background: var(--gold);
+color: var(--ink);
+border: none;
+border-radius: var(--radius);
+cursor: pointer;
+}
+.facet-drawer-done:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
 }
 .facet-title{
 font-family: var(--font-mono);
@@ -922,8 +1047,22 @@ var refTagger = {
 </div>
 </header>
 
+<!-- Mobile only (hidden on desktop): left-edge tab + backdrop that open/close the filter drawer -->
+<button type="button" class="filter-toggle" id="filterToggle" aria-controls="facetsPanel" aria-expanded="false">
+<span class="filter-toggle-main">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+<span class="filter-toggle-label">Filters</span>
+</span>
+<span class="filter-toggle-count" id="filterCount" aria-hidden="true">…</span>
+</button>
+<div class="filter-backdrop" id="filterBackdrop"></div>
+
 <div class="layout">
-<aside class="facets">
+<aside class="facets" id="facetsPanel">
+<div class="facet-drawer-head">
+<span class="facet-drawer-title">Filters</span>
+<button type="button" class="facet-drawer-done" id="filterDone">Show results</button>
+</div>
 <div class="facet-block">
 <div class="facet-body">
 <input type="text" id="searchInput" placeholder="Search track, artist, album…">
@@ -1223,6 +1362,8 @@ favFacet: document.getElementById('favFacet'),
 favOnlyBtn: document.getElementById('favOnlyBtn'),
 favOnlyCount: document.getElementById('favOnlyCount'),
 favActionBar: document.getElementById('favActionBar'),
+filterDone: document.getElementById('filterDone'),
+filterCount: document.getElementById('filterCount'),
 favCount: document.getElementById('favCount'),
 csvExportBtn: document.getElementById('csvExportBtn'),
 };
@@ -1283,6 +1424,7 @@ els.grid.innerHTML = `
 <button onclick="loadData()">Try again</button>
 </div>`;
 els.headerCount.textContent = "";
+els.filterCount.textContent = "";
 }
 
 function buildFacetOptions(){
@@ -1439,6 +1581,8 @@ return num >= min && num <= max;
 
 function renderGrid(){
 els.headerCount.textContent = filteredRows.length.toLocaleString() + " Songs";
+els.filterDone.textContent = "Show " + filteredRows.length.toLocaleString() + " Songs";
+els.filterCount.textContent = filteredRows.length.toLocaleString() + " songs";
 
 if(filteredRows.length===0){
 els.grid.innerHTML = dataLoaded ? `
@@ -1749,6 +1893,25 @@ applyFilters();
 document.querySelectorAll('.facet-title').forEach(t=>{
 t.addEventListener('click', ()=> t.closest('.facet-block').classList.toggle('collapsed'));
 });
+
+// Mobile filter drawer (see the "Mobile: filters become a left-edge slide-out
+// drawer" CSS). The elements exist on desktop too but are display:none there.
+const filterToggle = document.getElementById('filterToggle');
+const filterToggleLabel = filterToggle.querySelector('.filter-toggle-label');
+function setFiltersOpen(open){
+document.body.classList.toggle('filters-open', open);
+filterToggle.setAttribute('aria-expanded', String(open));
+filterToggleLabel.textContent = open ? 'Close' : 'Filters';
+}
+filterToggle.addEventListener('click', ()=> setFiltersOpen(!document.body.classList.contains('filters-open')));
+document.getElementById('filterBackdrop').addEventListener('click', ()=> setFiltersOpen(false));
+els.filterDone.addEventListener('click', ()=> setFiltersOpen(false));
+document.addEventListener('keydown', e=>{
+if(e.key === "Escape" && document.body.classList.contains('filters-open')) setFiltersOpen(false);
+});
+// Rotating/resizing up to the desktop layout while the drawer is open would
+// otherwise leave body scroll-locked with no visible way to undo it.
+window.matchMedia('(min-width: 861px)').addEventListener('change', e=>{ if(e.matches) setFiltersOpen(false); });
 
 els.searchInput.addEventListener('input', e=>{ state.search = e.target.value; visibleCount=PAGE_SIZE; applyFilters(); });
 els.psalmInput.addEventListener('input', e=>{ state.psalm = e.target.value; visibleCount=PAGE_SIZE; applyFilters(); });
