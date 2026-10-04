@@ -7,9 +7,10 @@ A faceted-filtering song explorer for the Zion Psalms dataset, embedded as an if
 
 ---
 
-## Features (current: v2.1)
+## Features (current: v2.3)
 
-- **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), Mood / Congregational / Textual Variance dual-handle sliders (each label has a hover tooltip explaining what it means), a "Charted songs only" toggle, an "Exclude unrated songs" toggle, and — once signed in — a "My Favorites" toggle. Any combination can be cleared at once.
+- **Faceted filtering** — free-text search, Psalm number, Genre (multi-select), Tags (multi-select), Mood / Congregational / Textual Variance dual-handle sliders (each label has a hover tooltip explaining what it means), a "Charted songs only" toggle, an "Exclude unrated songs" toggle, and — once signed in — a "My Favorites" toggle. Any combination can be cleared at once.
+- **Tags** — editorial labels (e.g. "Founder's Faves") you add in the sheet's `Tags` column, comma-separated. They show up as purple chips on the song cards and as a row of toggle pills in the filter panel. The pills are built from whatever tags currently exist in the data — a tag no song has simply doesn't appear — sorted A–Z, all the same size, with no counts. Selecting several pills shows songs that have *any* of them, and "clear all filters" resets them.
 - **Sorting** — by Psalm number, artist, release date, or track length, ascending or descending, from the dropdown in the header.
 - **Live song count** — the number in the header always reflects how many songs match your *current* filters, not a static total.
 - **Mobile filter drawer** — on phones the filters aren't stacked above the cards; they live in a drawer that slides in from the left. A gold "Filters" tab pinned to the left edge stays on screen as you scroll, so you can open or close the filters from anywhere in the list, and it shows a live `N songs` count underneath. Close the drawer with the tab, by tapping outside it, with Escape, or with the "Show N Songs" button at the top of the drawer. Desktop keeps the always-visible left column.
@@ -71,11 +72,12 @@ The app expects these exact column headers in the sheet. If a column is renamed,
 | `Artist URI(s)` | Links each artist name to their Spotify page (comma-separated, paired positionally with `Artist Name(s)`) |
 | `Album URI` | Links the album name to its Spotify page |
 | `Psalm No` | Psalm badge, Psalm number search, the badge's hover preview of the passage, and the "Read Psalm" link in the ⋮ menu |
-| `Genre` | Genre filter (comma-separated values split into multiple tags) |
+| `Genre` | Genre filter (comma-separated values — each becomes its own checkbox option and its own chip on the card) |
+| `Tags` | Tags filter pills and the purple tag chips on the card (comma-separated, matched as exact text, so keep spelling and capitalization consistent — see [Troubleshooting](#troubleshooting)) |
 | `Mood` | Mood slider (0–10 scale) |
 | `Congregational` | Congregational slider (0–10 scale) |
 | `Textual Variance` | Textual Variance slider (0–10 scale) |
-| `Chart` | "Charted songs only" toggle and the "Chart" tag (expects `TRUE` / `FALSE`) — an indicator only, doesn't need to point anywhere itself |
+| `Chart` | "Charted songs only" toggle and the red "Chart" badge on the card (expects `TRUE` / `FALSE`) — an indicator only, doesn't need to point anywhere itself |
 | `Lyrics URL` | "Lyrics" link in the ⋮ menu (row omitted if blank) |
 | `Chord Chart URL` | "Chord chart" link in the ⋮ menu (row omitted if blank) |
 | `CCLI URL` | "CCLI" badge on the card plus the "CCLI info" link in the ⋮ menu (both omitted if blank) |
@@ -113,7 +115,7 @@ const SHEET_GID = "518638622";
 
 ### Rearranging columns in the sheet is safe
 
-`scripts/sync-sheet.mjs` matches columns by their **header text** (`USED_COLUMNS`), not by position — so freely reordering, or inserting new columns anywhere in the sheet, won't break anything. The only thing that matters is that the header text for a column the app uses (see [Expected columns](#expected-columns) below) isn't renamed to something different — if it is, that field just goes blank in `data.json` on the next sync, the same graceful-degradation behavior as before.
+`scripts/sync-sheet.mjs` matches columns by their **header text** (`USED_COLUMNS`), not by position — so freely reordering, or inserting new columns anywhere in the sheet, won't break anything. The only thing that matters is that the header text for a column the app uses (see [Expected columns](#expected-columns) above) isn't renamed to something different — if it is, that field just goes blank in `data.json` on the next sync, the same graceful-degradation behavior as before.
 
 ---
 
@@ -127,6 +129,9 @@ This is expected for up to an hour — see [Data source](#data-source) above. Ch
 
 **A filter isn't working / a facet is empty**
 Check that the corresponding column header in the sheet exactly matches the names listed in [Expected columns](#expected-columns) above — even small differences (extra space, different capitalization) will break the match. Also confirm the last sync succeeded (Actions tab) — a renamed column just means that field is blank until the header text matches again, not an error.
+
+**A tag isn't showing up in the Tags filter, or shows up twice**
+Tags come straight from the `Tags` column and are matched as exact text, so "Starter Set" and "starter set" count as two different tags — keep spelling and capitalization consistent across songs. A tag only appears in the filter once at least one song has it *and* the next hourly sync has run (see [Data source](#data-source)).
 
 **A track/artist/album isn't clickable**
 That row's URI column is either empty or not in Spotify's standard `spotify:track:...` format. The app falls back to plain text rather than showing a broken link, so this degrades gracefully — but if it should link somewhere, check that cell in the sheet.
